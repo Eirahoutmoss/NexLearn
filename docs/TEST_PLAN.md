@@ -18,6 +18,7 @@ CI (`.github/workflows/ci.yml`) bunların hepsini her push/PR’da çalıştır�
 | `npx playwright test` | **20/20** geçti (art arda 2 çalıştırmada kararlı) |
 | `cargo test` / `cargo clippy -D warnings` | 2/2 geçti / uyarısız |
 | `npm audit --omit=dev` | 0 açık (fflate 0.8.3’e yükseltildi) |
+| GitHub Actions CI (`80dd67f`) | Web, Rust ve **Windows paketi (NSIS + MSI)** işleri başarılı; kurulum dosyaları artifact olarak üretildi |
 
 ## Birim testleri (Vitest)
 - **Zamanlayıcı** (`scheduler.test.ts`): ilk/ikinci/üçüncü başarı, unutma, ease alt sınırı, maxInterval, determinizm, geçersiz puan, UTC, düğme eşlemesi, gerekçe.

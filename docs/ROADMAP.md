@@ -25,7 +25,7 @@ Durum işaretleri yalnızca **çalıştırılmış testlerle doğrulanmış** i�
 - JSON/Markdown/CSV, ZIP yedek + şifreleme, doğrulama, geri yükleme + geri alma, tüm veriyi silme; PWA çevrimdışı; axe erişilebilirlik testleri; performans bütçe testleri; temalar; TR/EN; düğmeyle güncelleme (masaüstü + PWA).
 
 ## Doğrulanmayı bekleyenler
-- Windows kurulum paketinin gerçek bir Windows makinede kurulup güncellemenin uçtan uca denenmesi (paket GitHub Actions’ta `v*` etiketiyle üretilir; bu oturumda Windows çalıştırılamadı).
+- Windows kurulum paketinin gerçek bir Windows makinede kurulup güncellemenin uçtan uca denenmesi (paket CI’da Windows’ta başarıyla derleniyor; kurulum ve güncelleme akışı gerçek bir Windows makinede henüz denenmedi).
 - Ekran okuyucuyla (NVDA/Narrator) manuel kritik akış denemesi.
 - Düşük kapasiteli cihazda bellek ölçümü (< 200 MB boşta).
 
