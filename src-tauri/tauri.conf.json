@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "NexLearn",
+  "version": "../package.json",
+  "identifier": "com.eirahoutmoss.nexlearn",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:5173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "NexLearn",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 380,
+        "minHeight": 560,
+        "center": true,
+        "dragDropEnabled": false
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost https://api.github.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis", "msi"],
+    "publisher": "Hasan Güler",
+    "copyright": "© Hasan Güler — MPL-2.0",
+    "category": "Education",
+    "shortDescription": "Oku · Anla · Hatırla · Uygula",
+    "longDescription": "NexLearn; kaynak okuma, not alma, aralıklı tekrar ve kavram haritasını tek, yerel öncelikli ve ücretsiz bir öğrenme döngüsünde birleştirir.",
+    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "windows": {
+      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["Turkish", "English"],
+        "displayLanguageSelector": false
+      },
+      "wix": { "language": ["tr-TR", "en-US"] }
+    }
+  }
+}

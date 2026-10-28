@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Web — tip, lint, test, build, e2e, erişilebilirlik
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Bağımlılık denetimi (üretim)
+        run: npm audit --omit=dev --audit-level=moderate
+      - run: npm run typecheck
+      - run: npm run lint
+      - name: Birim ve entegrasyon testleri
+        run: npm test
+      - run: npm run build
+      - name: Playwright tarayıcısı ve qpdf
+        run: |
+          npx playwright install --with-deps chromium
+          sudo apt-get install -y qpdf
+      - name: Uçtan uca + erişilebilirlik (axe) + çevrimdışı testleri
+        run: npm run e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results
+          retention-days: 7
+
+  desktop-rust:
+    name: Masaüstü — Rust testleri
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Sistem bağımlılıkları
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev libssl-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      - name: Ön yüz derlemesi (tauri generate_context için dist gerekir)
+        run: |
+          npm ci
+          TAURI_ENV_PLATFORM=linux npm run build
+      - run: cargo test --manifest-path src-tauri/Cargo.toml
