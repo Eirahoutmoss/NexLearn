@@ -15,6 +15,11 @@ export function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window;
 }
 
+/** Uygulama kendi kendini güncelleyebilen bir kabukta mı (masaüstü ya da Android)? */
+export function canSelfUpdate(): boolean {
+  return isTauri() || (typeof window !== 'undefined' && (window as { Capacitor?: { getPlatform?: () => string } }).Capacitor?.getPlatform?.() === 'android');
+}
+
 export function parseVersion(v: string): [number, number, number] | null {
   const m = v.trim().replace(/^v/i, '').match(/^(\d+)\.(\d+)\.(\d+)/);
   return m ? [Number(m[1]), Number(m[2]), Number(m[3])] : null;
@@ -43,6 +48,7 @@ export interface ReleaseInfo {
   publishedAt: string;
   pageUrl: string;
   installer?: ReleaseAsset;
+  apk?: ReleaseAsset;
   msi?: ReleaseAsset;
   checksums?: ReleaseAsset;
 }
@@ -74,6 +80,7 @@ export function parseRelease(raw: unknown): ReleaseInfo {
     pageUrl: typeof r.html_url === 'string' && r.html_url.startsWith(`https://github.com/${REPO}/`) ? r.html_url : RELEASES_PAGE,
     installer,
     msi: assets.find((a) => /\.msi$/i.test(a.name)),
+    apk: assets.find((a) => /\.apk$/i.test(a.name)),
     checksums,
   };
 }
@@ -101,6 +108,17 @@ export async function checkForUpdate(current: string = __APP_VERSION__): Promise
 
 /** Masaüstü: kurulum dosyasını indirir, SHA-256 ile doğrular ve kurucuyu başlatır (uygulama kapanır). */
 export async function downloadAndInstall(release: ReleaseInfo, onProgress: (fraction: number) => void): Promise<void> {
+  const { isAndroid, androidInstall } = await import('./native');
+  if (isAndroid()) {
+    if (!release.apk || !release.checksums) throw new AppError('UPD-001', 'assets');
+    try {
+      await androidInstall({ url: release.apk.url, checksumsUrl: release.checksums.url, fileName: release.apk.name }, onProgress);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new AppError('UPD-001', msg.slice(0, 60));
+    }
+    return;
+  }
   if (!isTauri()) throw new AppError('UPD-001', 'not-desktop');
   if (!release.installer || !release.checksums) throw new AppError('UPD-001', 'assets');
   const [{ invoke }, { listen }] = await Promise.all([import('@tauri-apps/api/core'), import('@tauri-apps/api/event')]);

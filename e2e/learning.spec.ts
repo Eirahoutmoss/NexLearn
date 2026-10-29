@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { readFileSync } from 'node:fs';
 import { importFiles, importMarkdown, openApp, selectText } from './helpers';
 import { makeEpub } from '../src/tests/fixtures';
 
@@ -109,4 +110,41 @@ test('OCR: görseldeki yazı yerel olarak tanınır', async ({ page }) => {
   await expect(page.getByText(/bölüm tanındı/)).toBeVisible({ timeout: 120_000 });
   await expect(page.locator('.reading')).toContainText(/reliable/i);
   await expect(page.locator('.ocr-notice')).toBeVisible();
+});
+
+test('eşli öğrenme: meydan okuma dosyası → çöz → cevap dosyası → karşılaştırma', async ({ page }) => {
+  await openApp(page);
+  await importMarkdown(page);
+  await selectText(page, 'bağlantısızdır');
+  await page.getByRole('toolbar', { name: 'Seçim araçları' }).getByRole('button', { name: 'Kart oluştur' }).click();
+  const cardDialog = page.getByRole('dialog', { name: 'Yeni kart' });
+  await cardDialog.getByLabel('Soru').fill('UDP nasıldır?');
+  await cardDialog.getByRole('button', { name: 'Kaydet' }).click();
+
+  await page.goto('/#/review?tab=practice');
+  await page.getByRole('button', { name: 'Arkadaşına meydan oku' }).click();
+  const dlg = page.getByRole('dialog', { name: 'Meydan okuma oluştur' });
+  await dlg.getByLabel('Meydan okuma adı').fill('Ağ düellosu');
+  await dlg.getByLabel('Adın').fill('Ayşe');
+  const [challengeDl] = await Promise.all([page.waitForEvent('download'), dlg.getByRole('button', { name: 'Dosyayı oluştur' }).click()]);
+  expect(challengeDl.suggestedFilename()).toBe('ag-duellosu.nexduel');
+  const challenge = readFileSync((await challengeDl.path())!);
+
+  // Arkadaşın cihazı: temiz bir bağlam
+  const friend = await page.context().browser()!.newPage();
+  await openApp(friend);
+  await friend.goto('/#/review?tab=duel');
+  await friend.getByTestId('duel-input').setInputFiles([{ name: 'ag-duellosu.nexduel', mimeType: 'application/json', buffer: challenge }]);
+  await expect(friend.getByText('Ayşe · 1 soru')).toBeVisible();
+  await friend.getByLabel('Adın').fill('Mehmet');
+  await friend.getByRole('button', { name: 'Çöz', exact: true }).click();
+  await friend.getByRole('button', { name: 'Cevabı Göster' }).click();
+  const [answerDl] = await Promise.all([friend.waitForEvent('download'), friend.getByRole('button', { name: 'Bildim' }).click()]);
+  expect(answerDl.suggestedFilename()).toBe('ag-duellosu.nexduel-cevap');
+  const answer = readFileSync((await answerDl.path())!);
+  await friend.close();
+
+  await page.goto('/#/review?tab=duel');
+  await page.getByTestId('duel-input').setInputFiles([{ name: 'ag-duellosu.nexduel-cevap', mimeType: 'application/json', buffer: answer }]);
+  await expect(page.getByRole('table', { name: 'Ağ düellosu karşılaştırması' })).toContainText('Mehmet · %100');
 });

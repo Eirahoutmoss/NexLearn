@@ -6,6 +6,8 @@ import { VitePWA } from 'vite-plugin-pwa';
 
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
 const isTauri = Boolean(process.env.TAURI_ENV_PLATFORM);
+/** Android (Capacitor) kabuğu: dosyalar uygulama içinden gelir, service worker gerekmez. */
+const isAndroid = process.env.NEX_TARGET === 'android';
 
 export default defineConfig({
   base: './',
@@ -22,7 +24,7 @@ export default defineConfig({
     react(),
     // Tauri paketinde dosyalar zaten yerel; service worker yalnızca web/PWA için (Tauri'de devre dışı).
     VitePWA({
-            disable: isTauri,
+            disable: isTauri || isAndroid,
             registerType: 'prompt',
             injectRegister: false,
             includeAssets: ['favicon.svg', 'icons/*.png'],

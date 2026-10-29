@@ -15,6 +15,7 @@ import { AktarPanel } from '../modules/aktar/AktarPanel';
 import { aktarSupported } from '../services/aktar';
 import { PackExportModal, PackImportModal } from '../modules/pack/PackDialogs';
 import { looksLikePack } from '../services/pack';
+import { looksLikeDuel, receiveDuelFile } from '../services/duel';
 import { downloadBlob } from '../services/export/download';
 
 /* ------------------------------------------------------------------ */
@@ -58,6 +59,31 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
   const [cardInit, setCardInit] = useState<CardEditorInit | null>(null);
   const [conceptInit, setConceptInit] = useState<ConceptEditorInit | null>(null);
   const [packExport, setPackExport] = useState<string[] | null>(null);
+  const [incoming, setIncoming] = useState<File[] | null>(null);
+  // Android paylaş menüsünden gelen dosyalar içe aktarma penceresine düşer.
+  useEffect(() => {
+    let off: (() => void) | undefined;
+    let live = true;
+    const pull = () =>
+      void import('../services/native')
+        .then((m) => m.takeSharedFiles())
+        .then((files) => {
+          if (live && files.length) {
+            setIncoming(files);
+            setImportTab('file');
+          }
+        })
+        .catch(() => undefined);
+    void import('../services/native').then(async (m) => {
+      if (!m.isAndroid()) return;
+      pull();
+      off = await m.onSharedFiles(pull);
+    });
+    return () => {
+      live = false;
+      off?.();
+    };
+  }, []);
   const api = useMemo<DialogsApi>(
     () => ({
       openImport: (tab = 'file') => setImportTab(tab),
@@ -70,7 +96,7 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
   return (
     <DialogsCtx.Provider value={api}>
       {children}
-      <ImportDialog tab={importTab} onClose={() => setImportTab(null)} onTab={setImportTab} />
+      <ImportDialog tab={importTab} onClose={() => setImportTab(null)} onTab={setImportTab} incoming={incoming} onIncomingTaken={() => setIncoming(null)} />
       <CardEditor init={cardInit} onClose={() => setCardInit(null)} />
       <ConceptEditor init={conceptInit} onClose={() => setConceptInit(null)} />
       <PackExportModal open={packExport != null} initialSourceIds={packExport ?? undefined} onClose={() => setPackExport(null)} />
@@ -91,7 +117,19 @@ interface ImportJob {
   controller: AbortController;
 }
 
-function ImportDialog({ tab, onClose, onTab }: { tab: null | 'file' | 'paste' | 'note'; onClose: () => void; onTab: (t: 'file' | 'paste' | 'note') => void }) {
+function ImportDialog({
+  tab,
+  onClose,
+  onTab,
+  incoming,
+  onIncomingTaken,
+}: {
+  tab: null | 'file' | 'paste' | 'note';
+  onClose: () => void;
+  onTab: (t: 'file' | 'paste' | 'note') => void;
+  incoming?: File[] | null;
+  onIncomingTaken?: () => void;
+}) {
   const { t, formatNumber } = useI18n();
   const { toast, reportError, confirm } = useApp();
   const [jobs, setJobs] = useState<ImportJob[]>([]);
@@ -153,6 +191,17 @@ function ImportDialog({ tab, onClose, onTab }: { tab: null | 'file' | 'paste' | 
     const list: File[] = [];
     for (const file of Array.from(files)) {
       if (looksLikePack(file.name)) setPackFile(file);
+      else if (looksLikeDuel(file.name)) {
+        void file
+          .arrayBuffer()
+          .then((b) => receiveDuelFile(new Uint8Array(b)))
+          .then((r) => {
+            toast(r.kind === 'challenge' ? t('duel.receivedChallenge') : r.matched ? t('duel.receivedAnswer') : t('duel.unknownAnswer'), { tone: r.matched ? 'success' : 'info' });
+            onClose();
+            navigate(routes.review('duel'));
+          })
+          .catch((e) => reportError(e, 'duel-open'));
+      }
       else if (/\.(nexlearn-enc|zip)$/i.test(file.name) && /nexlearn-backup/i.test(file.name)) {
         // Telefondan gelen yedek: diske kaydedilir, geri yükleme Ayarlar → Veri'den yapılır.
         downloadBlob(file, file.name);
@@ -181,6 +230,14 @@ function ImportDialog({ tab, onClose, onTab }: { tab: null | 'file' | 'paste' | 
       reportError(e, 'create-text');
     }
   };
+
+  useEffect(() => {
+    if (!incoming?.length) return;
+    addFiles(incoming);
+    onIncomingTaken?.();
+    // addFiles her çizimde yeniden oluşur; yalnızca yeni gelen dosyalar tetiklemeli.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incoming]);
 
   const activeJobs = jobs.filter((j) => ['queued', 'reading', 'extracting', 'saving'].includes(j.phase)).length;
 
@@ -224,7 +281,7 @@ function ImportDialog({ tab, onClose, onTab }: { tab: null | 'file' | 'paste' | 
                 type="file"
                 multiple
                 hidden
-                accept=".pdf,.epub,.nexpack,.txt,.md,.markdown,.text,application/epub+zip,image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/markdown"
+                accept=".pdf,.epub,.nexpack,.nexduel,.nexduel-cevap,.txt,.md,.markdown,.text,application/epub+zip,image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/markdown"
                 onChange={(e) => {
                   if (e.target.files) addFiles(e.target.files);
                   e.target.value = '';

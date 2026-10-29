@@ -20,13 +20,14 @@ import { listRelations } from '../../services/learn';
 import { interleave, topicOf } from '../../domain/learning';
 import type { Confidence } from '../../domain/types';
 import { PracticeView } from './PracticeView';
+import { DuelView } from './DuelView';
 
 const BUTTONS: ReviewButton[] = ['again', 'hard', 'good', 'easy'];
 
 export default function ReviewPage({ tab, cardId, scope }: { tab: string; cardId?: string; scope?: string }) {
   const { t } = useI18n();
   const { openCardEditor } = useDialogs();
-  const current = ['today', 'practice', 'cards', 'history'].includes(tab) ? tab : 'today';
+  const current = ['today', 'practice', 'duel', 'cards', 'history'].includes(tab) ? tab : 'today';
   return (
     <div className="page">
       <header className="page-header">
@@ -42,10 +43,11 @@ export default function ReviewPage({ tab, cardId, scope }: { tab: string; cardId
         idPrefix="rv"
         label={t('review.title')}
         value={current}
-        onChange={(v) => navigate(routes.review(v as 'today' | 'practice' | 'cards' | 'history'), { replace: true })}
+        onChange={(v) => navigate(routes.review(v as 'today' | 'practice' | 'duel' | 'cards' | 'history'), { replace: true })}
         items={[
           { id: 'today', label: t('review.tabToday') },
           { id: 'practice', label: t('review.tabPractice') },
+          { id: 'duel', label: t('review.tabDuel') },
           { id: 'cards', label: t('review.tabCards') },
           { id: 'history', label: t('review.tabHistory') },
         ]}
@@ -53,6 +55,7 @@ export default function ReviewPage({ tab, cardId, scope }: { tab: string; cardId
       <TabPanel idPrefix="rv" id={current}>
         {current === 'today' && <ReviewSession />}
         {current === 'practice' && <PracticeView initialScope={scope} />}
+        {current === 'duel' && <DuelView />}
         {current === 'cards' && <CardList openCardId={cardId} />}
         {current === 'history' && <HistoryList />}
       </TabPanel>

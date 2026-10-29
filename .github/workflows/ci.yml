@@ -94,3 +94,59 @@ jobs:
           name: nexlearn-windows-${{ github.sha }}
           path: out/*
           retention-days: 14
+
+  android:
+    name: Android — birim testleri ve APK (yalnızca main)
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - name: Web derlemesi ve Capacitor eşitlemesi
+        run: npm run android:sync
+      - name: İmza anahtarı (gizli değişken tanımlıysa)
+        env:
+          KS: ${{ secrets.NEXLEARN_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KS" ]; then
+            echo "$KS" | base64 -d > "$RUNNER_TEMP/nexlearn.jks"
+            echo "NEXLEARN_KEYSTORE_PATH=$RUNNER_TEMP/nexlearn.jks" >> "$GITHUB_ENV"
+          fi
+      - name: Gradle — testler ve APK
+        working-directory: android
+        env:
+          NEXLEARN_KEYSTORE_PASSWORD: ${{ secrets.NEXLEARN_KEYSTORE_PASSWORD }}
+          NEXLEARN_KEY_ALIAS: ${{ secrets.NEXLEARN_KEY_ALIAS }}
+          NEXLEARN_KEY_PASSWORD: ${{ secrets.NEXLEARN_KEY_PASSWORD }}
+        run: |
+          if [ -n "$NEXLEARN_KEYSTORE_PATH" ]; then
+            ./gradlew --no-daemon testReleaseUnitTest assembleRelease
+          else
+            echo "::warning::İmza anahtarı tanımlı değil; deneme amaçlı debug APK üretiliyor."
+            ./gradlew --no-daemon testDebugUnitTest assembleDebug
+          fi
+      - name: APK ve SHA256SUMS
+        run: |
+          mkdir -p out
+          V=$(node -p "require('./package.json').version")
+          if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk "out/NexLearn_${V}_android.apk"
+          else
+            cp android/app/build/outputs/apk/debug/app-debug.apk "out/NexLearn_${V}_android-debug.apk"
+          fi
+          (cd out && sha256sum *.apk > SHA256SUMS.txt && cat SHA256SUMS.txt)
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nexlearn-android-${{ github.sha }}
+          path: out/*
+          retention-days: 14

@@ -1,15 +1,15 @@
-name: Release (Windows)
+name: Release
 
-# Sürüm etiketi (ör. v0.2.0) gönderildiğinde Windows kurulum dosyaları üretilir,
-# SHA256SUMS.txt hesaplanır ve GitHub sürümüne eklenir. Uygulama içi "Güncellemeleri denetle"
-# düğmesi bu sürümü bulur ve kurulum dosyasını SHA-256 ile doğrulayarak kurar.
+# Sürüm etiketi (ör. v0.2.0) gönderildiğinde Windows kurulum dosyaları ve Android APK üretilir,
+# tümü için tek bir SHA256SUMS.txt hesaplanır ve GitHub sürümüne eklenir. Uygulama içi
+# "Güncellemeleri denetle" düğmesi bu sürümü bulur ve dosyayı SHA-256 ile doğrulayarak kurar.
 on:
   push:
     tags: ['v*.*.*']
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   windows:
@@ -36,17 +36,80 @@ jobs:
       - run: npm test
       - name: Tauri derlemesi
         run: npm run tauri build
-      - name: Kurulum dosyalarını topla ve SHA256SUMS üret
+      - name: Kurulum dosyalarını topla
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path out | Out-Null
           Get-ChildItem src-tauri/target/release/bundle/nsis/*.exe, src-tauri/target/release/bundle/msi/*.msi | Copy-Item -Destination out
-          $lines = Get-ChildItem out | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name }
-          $lines | Set-Content -Encoding ascii out/SHA256SUMS.txt
-          Get-Content out/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: nexlearn-windows
+          name: release-windows
+          path: out/*
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      built: ${{ steps.apk.outputs.built }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm run android:sync
+      - name: İmzalı APK (anahtar yoksa atlanır)
+        id: apk
+        env:
+          KS: ${{ secrets.NEXLEARN_KEYSTORE_BASE64 }}
+          NEXLEARN_KEYSTORE_PASSWORD: ${{ secrets.NEXLEARN_KEYSTORE_PASSWORD }}
+          NEXLEARN_KEY_ALIAS: ${{ secrets.NEXLEARN_KEY_ALIAS }}
+          NEXLEARN_KEY_PASSWORD: ${{ secrets.NEXLEARN_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KS" ]; then
+            echo "::warning::NEXLEARN_KEYSTORE_BASE64 tanımlı değil; bu sürümde Android APK yayımlanmayacak."
+            echo "built=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "$KS" | base64 -d > "$RUNNER_TEMP/nexlearn.jks"
+          export NEXLEARN_KEYSTORE_PATH="$RUNNER_TEMP/nexlearn.jks"
+          (cd android && ./gradlew --no-daemon testReleaseUnitTest assembleRelease)
+          mkdir -p out
+          V=$(node -p "require('./package.json').version")
+          cp android/app/build/outputs/apk/release/app-release.apk "out/NexLearn_${V}_android.apk"
+          echo "built=true" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: steps.apk.outputs.built == 'true'
+        with:
+          name: release-android
+          path: out/*
+
+  publish:
+    needs: [windows, android]
+    if: always() && needs.windows.result == 'success'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: out
+      - name: SHA256SUMS
+        run: |
+          cd out
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nexlearn-release
           path: out/*
       - name: GitHub sürümü
         if: startsWith(github.ref, 'refs/tags/')

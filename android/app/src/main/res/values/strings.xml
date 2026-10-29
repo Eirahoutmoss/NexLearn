@@ -1,0 +1,8 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">NexLearn</string>
+    <string name="title_activity_main">NexLearn</string>
+    <string name="package_name">io.github.eirahoutmoss.nexlearn</string>
+    <string name="custom_url_scheme">io.github.eirahoutmoss.nexlearn</string>
+    <string name="share_label">NexLearn'e ekle</string>
+</resources>

@@ -15,7 +15,7 @@ import { notesMarkdown } from '../../services/export/markdown';
 import { cardsCsv, reviewEventsCsv } from '../../services/export/csv';
 import { downloadBytes, downloadText } from '../../services/export/download';
 import { listReviewStates } from '../../services/memory';
-import { checkForUpdate, checkWebUpdate, downloadAndInstall, isTauri, RELEASES_PAGE, type UpdateCheck } from '../../services/update';
+import { canSelfUpdate, checkForUpdate, checkWebUpdate, downloadAndInstall, isTauri, RELEASES_PAGE, type UpdateCheck } from '../../services/update';
 import { hasSample, loadSample, removeSample } from '../../sample/sample';
 import { eventToCombo } from '../../app/shortcuts';
 import { isAppError } from '../../domain/errors';
@@ -662,12 +662,14 @@ function About() {
   const [result, setResult] = useState<UpdateCheck | null>(null);
   const [progress, setProgress] = useState(0);
   const desktop = isTauri();
+  const native = canSelfUpdate();
+  const android = native && !desktop;
 
   const check = async () => {
     setState('checking');
     setResult(null);
     try {
-      if (desktop) {
+      if (native) {
         setResult(await checkForUpdate());
       } else {
         const r = await checkWebUpdate();
@@ -686,8 +688,10 @@ function About() {
     setProgress(0);
     try {
       await downloadAndInstall(result.latest, setProgress);
+      if (android) setState('idle');
     } catch (e) {
-      reportError(e, 'update-install');
+      if (isAppError(e) && e.details === 'needs-permission') toast(t('update.androidPermission'), { tone: 'info' });
+      else reportError(e, 'update-install');
       setState('idle');
     }
   };
@@ -701,7 +705,7 @@ function About() {
         </div>
         <div>
           <dt>{t('about.platform')}</dt>
-          <dd>{desktop ? t('about.desktop') : t('about.web')}</dd>
+          <dd>{desktop ? t('about.desktop') : android ? t('about.android') : t('about.web')}</dd>
         </div>
         <div>
           <dt>{t('about.license')}</dt>
@@ -726,7 +730,7 @@ function About() {
           {t('update.check')}
         </Button>
       </div>
-      <p className="field-hint">{desktop ? t('update.desktopHint') : t('update.webHint')}</p>
+      <p className="field-hint">{desktop ? t('update.desktopHint') : android ? t('update.androidHint') : t('update.webHint')}</p>
       {result?.status === 'up-to-date' && (
         <p className="inline-notice" role="status">
           {t('update.upToDate', { version: result.current })}
@@ -739,7 +743,7 @@ function About() {
             {result.latest.publishedAt && ` · ${formatDate(result.latest.publishedAt)}`}
           </p>
           {result.latest.notes && <pre className="release-notes">{result.latest.notes}</pre>}
-          {result.latest.installer && result.latest.checksums ? (
+          {(android ? result.latest.apk : result.latest.installer) && result.latest.checksums ? (
             <>
               {state === 'downloading' && <ProgressBar value={progress * 100} label={t('update.downloading')} showValue />}
               <Button variant="primary" icon={Download} loading={state === 'downloading'} onClick={() => void install()}>

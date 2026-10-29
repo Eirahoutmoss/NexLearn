@@ -1,10 +1,12 @@
 import { useMemo, useRef, useState } from 'react';
-import { ClipboardCheck, ExternalLink, RotateCcw } from 'lucide-react';
+import { ClipboardCheck, ExternalLink, RotateCcw, Swords } from 'lucide-react';
 import { useI18n } from '../../i18n';
 import { useQuery } from '../../app/useQuery';
 import { useApp } from '../../app/AppContext';
 import { routes } from '../../app/router';
-import { Button, Card, EmptyState, ProgressBar, SelectField, Spinner } from '../../components/ui';
+import { Button, Card, EmptyState, SelectField, Spinner } from '../../components/ui';
+import { QuizRunner, type QuizOutcome } from './QuizRunner';
+import { ChallengeModal } from './DuelView';
 import { listCards, listReviewStates } from '../../services/memory';
 import { listConcepts } from '../../services/learn';
 import { listSources } from '../../services/sources';
@@ -26,13 +28,10 @@ export function PracticeView({ initialScope }: { initialScope?: string }) {
   const [scopeKey, setScopeKey] = useState(initialScope ?? 'all');
   const [count, setCount] = useState(10);
   const [set, setSet] = useState<LearningItem[] | null>(null);
-  const [pos, setPos] = useState(0);
-  const [revealed, setRevealed] = useState(false);
-  const [typed, setTyped] = useState('');
-  const [grades, setGrades] = useState<PracticeGrade[]>([]);
+  const [grades, setGrades] = useState<PracticeGrade[] | null>(null);
+  const [run, setRun] = useState(0);
   const started = useRef(new Date());
-  const activeMs = useRef(0);
-  const shownAt = useRef(Date.now());
+  const [duelOpen, setDuelOpen] = useState(false);
 
   const tags = useMemo(() => [...new Set((data?.items ?? []).flatMap((i) => i.tags))].sort((a, b) => a.localeCompare(b, 'tr')), [data]);
 
@@ -51,28 +50,16 @@ export function PracticeView({ initialScope }: { initialScope?: string }) {
   const start = () => {
     const s = buildPracticeSet(data.items, data.states, parseScope(), count);
     setSet(s);
-    setPos(0);
-    setGrades([]);
-    setRevealed(false);
-    setTyped('');
+    setGrades(null);
+    setRun((r) => r + 1);
     started.current = new Date();
-    activeMs.current = 0;
-    shownAt.current = Date.now();
   };
 
-  const grade = (g: PracticeGrade) => {
+  const finish = (o: QuizOutcome) => {
     if (!set) return;
-    activeMs.current += Math.min(Date.now() - shownAt.current, 120_000);
-    const next = [...grades, g];
-    setGrades(next);
-    setRevealed(false);
-    setTyped('');
-    shownAt.current = Date.now();
-    if (pos + 1 >= set.length) {
-      const sourceIds = [...new Set(set.flatMap((i) => i.sourceRefs.map((r) => r.sourceId)))];
-      void savePracticeSession(started.current, activeMs.current, summarizePractice(next), sourceIds).catch((e) => reportError(e, 'practice-save'));
-    }
-    setPos(pos + 1);
+    setGrades(o.grades);
+    const sourceIds = [...new Set(set.flatMap((i) => i.sourceRefs.map((r) => r.sourceId)))];
+    void savePracticeSession(started.current, o.activeMs, summarizePractice(o.grades), sourceIds).catch((e) => reportError(e, 'practice-save'));
   };
 
   // Kurulum ekranı
@@ -102,9 +89,19 @@ export function PracticeView({ initialScope }: { initialScope?: string }) {
           />
         </div>
         <p className="field-hint">{t('practice.noSchedule')}</p>
-        <Button variant="primary" onClick={start}>
-          {t('practice.start')}
-        </Button>
+        <div className="row-wrap">
+          <Button variant="primary" onClick={start}>
+            {t('practice.start')}
+          </Button>
+          <Button icon={Swords} onClick={() => setDuelOpen(true)}>
+            {t('duel.challengeFriend')}
+          </Button>
+        </div>
+        <ChallengeModal
+          open={duelOpen}
+          onClose={() => setDuelOpen(false)}
+          build={() => buildPracticeSet(data.items, data.states, parseScope(), count)}
+        />
       </Card>
     );
   }
@@ -119,7 +116,7 @@ export function PracticeView({ initialScope }: { initialScope?: string }) {
   }
 
   // Sonuç ekranı
-  if (pos >= set.length) {
+  if (grades) {
     const sum = summarizePractice(grades);
     const missed = set.filter((_, i) => grades[i] !== 'knew');
     return (
@@ -163,55 +160,5 @@ export function PracticeView({ initialScope }: { initialScope?: string }) {
     );
   }
 
-  const item = set[pos];
-  return (
-    <div className="review">
-      <div className="review-top">
-        <span className="review-count" aria-live="polite">
-          {t('review.position', { n: pos + 1, total: set.length })}
-        </span>
-        <ProgressBar value={(pos / set.length) * 100} label={t('review.sessionProgress')} />
-      </div>
-      <Card className="flashcard" aria-labelledby="pr-prompt">
-        <p className="flashcard-kind">{t('practice.badge')}</p>
-        <h2 id="pr-prompt" className="flashcard-prompt">
-          {item.prompt}
-        </h2>
-        {!revealed ? (
-          <>
-            <label className="sr-only" htmlFor="pr-typed">
-              {t('review.typeAnswer')}
-            </label>
-            <textarea id="pr-typed" className="input textarea flashcard-input" rows={2} placeholder={t('review.typeAnswer')} value={typed} onChange={(e) => setTyped(e.target.value)} />
-            <Button variant="soft" size="lg" className="flashcard-show" onClick={() => setRevealed(true)}>
-              {t('review.showAnswer')}
-            </Button>
-          </>
-        ) : (
-          <div className="flashcard-answer" aria-live="polite">
-            {typed.trim() && (
-              <p className="typed-echo">
-                <span className="muted">{t('review.yourAnswer')}:</span> {typed}
-              </p>
-            )}
-            <p className="answer-text">{item.answer}</p>
-            <p className="rate-question" id="pr-q">
-              {t('practice.howDid')}
-            </p>
-            <div className="rate-buttons rate-3" role="group" aria-labelledby="pr-q">
-              <button type="button" className="rate-btn rate-again" onClick={() => grade('missed')}>
-                <span className="rate-label">{t('practice.missed')}</span>
-              </button>
-              <button type="button" className="rate-btn rate-hard" onClick={() => grade('partial')}>
-                <span className="rate-label">{t('practice.partial')}</span>
-              </button>
-              <button type="button" className="rate-btn rate-easy" onClick={() => grade('knew')}>
-                <span className="rate-label">{t('practice.knew')}</span>
-              </button>
-            </div>
-          </div>
-        )}
-      </Card>
-    </div>
-  );
+  return <QuizRunner key={run} questions={set} badge={t('practice.badge')} onFinish={finish} />;
 }
