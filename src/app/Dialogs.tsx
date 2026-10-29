@@ -205,7 +205,7 @@ function ImportDialog({ tab, onClose, onTab }: { tab: null | 'file' | 'paste' | 
                 type="file"
                 multiple
                 hidden
-                accept=".pdf,.txt,.md,.markdown,.text,image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/markdown"
+                accept=".pdf,.epub,.txt,.md,.markdown,.text,application/epub+zip,image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/markdown"
                 onChange={(e) => {
                   if (e.target.files) addFiles(e.target.files);
                   e.target.value = '';

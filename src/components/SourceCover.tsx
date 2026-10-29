@@ -1,4 +1,4 @@
-import { FileText, FileType2, Image as ImageIcon, NotebookPen, ClipboardPaste, BookOpen } from 'lucide-react';
+import { FileText, FileType2, Image as ImageIcon, NotebookPen, ClipboardPaste, BookOpen, BookMarked } from 'lucide-react';
 import type { Source } from '../domain/types';
 
 const PALETTE = ['var(--mod-read)', 'var(--mod-memory)', 'var(--mod-learn)', 'var(--mod-apply)'];
@@ -9,7 +9,7 @@ function hashString(s: string): number {
   return h >>> 0;
 }
 
-export const SOURCE_ICONS = { pdf: FileType2, txt: FileText, markdown: BookOpen, note: NotebookPen, paste: ClipboardPaste, image: ImageIcon } as const;
+export const SOURCE_ICONS = { pdf: FileType2, txt: FileText, markdown: BookOpen, note: NotebookPen, paste: ClipboardPaste, image: ImageIcon, epub: BookMarked } as const;
 
 /** Kaynak için kimliğinden türetilen, gerçek içerik iddiası taşımayan sade kapak. */
 export function SourceCover({ source, thumbUrl }: { source: Pick<Source, 'id' | 'title' | 'sourceType'>; thumbUrl?: string }) {

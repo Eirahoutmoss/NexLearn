@@ -7,6 +7,8 @@
   "license": "MPL-2.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/copy-ocr.mjs",
+    "prebuild": "node scripts/copy-ocr.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview --port 4173 --strictPort",
@@ -44,12 +46,15 @@
     "@fontsource/literata": "^5.2.6",
     "@fontsource/opendyslexic": "^5.2.5",
     "@tauri-apps/api": "^2.5.0",
+    "@tesseract.js-data/eng": "^1.0.0",
+    "@tesseract.js-data/tur": "^1.0.0",
     "fflate": "^0.8.3",
     "idb": "^8.0.3",
     "lucide-react": "^0.511.0",
     "pdfjs-dist": "^4.10.38",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "tesseract.js": "^7.0.0"
   },
   "homepage": "https://github.com/Eirahoutmoss/NexLearn"
 }

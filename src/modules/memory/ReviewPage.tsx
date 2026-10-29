@@ -16,13 +16,17 @@ import { BUTTON_RATING, schedule, type ScheduleReason } from '../../domain/sched
 import { normalizeForSearch } from '../../domain/text';
 import type { LearningItem, ReviewButton, ReviewState, Source } from '../../domain/types';
 import { hardCards } from '../../services/progress';
+import { listRelations } from '../../services/learn';
+import { interleave, topicOf } from '../../domain/learning';
+import type { Confidence } from '../../domain/types';
+import { PracticeView } from './PracticeView';
 
 const BUTTONS: ReviewButton[] = ['again', 'hard', 'good', 'easy'];
 
-export default function ReviewPage({ tab, cardId }: { tab: string; cardId?: string }) {
+export default function ReviewPage({ tab, cardId, scope }: { tab: string; cardId?: string; scope?: string }) {
   const { t } = useI18n();
   const { openCardEditor } = useDialogs();
-  const current = ['today', 'cards', 'history'].includes(tab) ? tab : 'today';
+  const current = ['today', 'practice', 'cards', 'history'].includes(tab) ? tab : 'today';
   return (
     <div className="page">
       <header className="page-header">
@@ -38,15 +42,17 @@ export default function ReviewPage({ tab, cardId }: { tab: string; cardId?: stri
         idPrefix="rv"
         label={t('review.title')}
         value={current}
-        onChange={(v) => navigate(routes.review(v as 'today' | 'cards' | 'history'), { replace: true })}
+        onChange={(v) => navigate(routes.review(v as 'today' | 'practice' | 'cards' | 'history'), { replace: true })}
         items={[
           { id: 'today', label: t('review.tabToday') },
+          { id: 'practice', label: t('review.tabPractice') },
           { id: 'cards', label: t('review.tabCards') },
           { id: 'history', label: t('review.tabHistory') },
         ]}
       />
       <TabPanel idPrefix="rv" id={current}>
         {current === 'today' && <ReviewSession />}
+        {current === 'practice' && <PracticeView initialScope={scope} />}
         {current === 'cards' && <CardList openCardId={cardId} />}
         {current === 'history' && <HistoryList />}
       </TabPanel>
@@ -70,6 +76,7 @@ function ReviewSession() {
   const [pos, setPos] = useState(0);
   const [revealed, setRevealed] = useState(false);
   const [typed, setTyped] = useState('');
+  const [confidence, setConfidence] = useState<Confidence | null>(null);
   const [reason, setReason] = useState<ScheduleReason | null>(null);
   const [stats, setStats] = useState({ reviewed: 0, again: 0 });
   const [nextDue, setNextDue] = useState<string | null>(null);
@@ -83,13 +90,19 @@ function ReviewSession() {
   const showBtnRef = useRef<HTMLButtonElement>(null);
 
   const load = useCallback(async () => {
-    const [q, nd, srcs] = await Promise.all([getDueQueue(), getNextDue(), listSources()]);
+    const [due, nd, srcs, rels] = await Promise.all([getDueQueue(), getNextDue(), listSources(), listRelations()]);
+    // Karıştırmalı sıra: aynı konudan kartlar art arda gelmez, karşıt kavramlar yan yana gelir.
+    const q = settings.interleave
+      ? interleave(due.map((e) => ({ ...e, id: e.item.id, topic: topicOf(e.item) })), rels)
+      : due;
     setQueue(q);
     setPos(0);
     setRevealed(false);
     setNextDue(nd);
     setSources(new Map(srcs.map((s) => [s.id, s])));
     shownAt.current = Date.now();
+    // Oturum başında bir kez yüklenir; ayar değişikliği bir sonraki oturumda uygulanır.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -120,7 +133,9 @@ function ReviewSession() {
       const res = await recordReview(entry.item.id, button, {
         responseDurationMs: elapsed,
         answerText: settings.storeTypedAnswers ? typed : undefined,
+        confidence: confidence ?? undefined,
       });
+      setConfidence(null);
       setReason(res.reason);
       setStats((s) => ({ reviewed: s.reviewed + 1, again: s.again + (button === 'again' ? 1 : 0) }));
       let nextQueue = queue!;
@@ -239,6 +254,17 @@ function ReviewSession() {
               }}
             />
             <p className="field-hint">{settings.storeTypedAnswers ? t('review.typedStored') : t('review.typedNotStored')}</p>
+            {settings.askConfidence && (
+              <fieldset className="confidence-row">
+                <legend className="field-label">{t('review.confidenceQ')}</legend>
+                {([1, 2, 3] as const).map((c) => (
+                  <label key={c} className={`confidence-option ${confidence === c ? 'selected' : ''}`}>
+                    <input type="radio" name="confidence" className="sr-only-input" checked={confidence === c} onChange={() => setConfidence(c)} />
+                    {t(`review.confidence.${c}`)}
+                  </label>
+                ))}
+              </fieldset>
+            )}
             <Button ref={showBtnRef} variant="soft" size="lg" onClick={reveal} className="flashcard-show" aria-keyshortcuts={sc.showAnswer === 'Space' ? 'Space' : sc.showAnswer}>
               {t('review.showAnswer')}
             </Button>

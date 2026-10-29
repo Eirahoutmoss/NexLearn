@@ -2,11 +2,13 @@ import { AppError } from '../../domain/errors';
 import { extensionOf } from '../../domain/text';
 import type { SourceType } from '../../domain/types';
 import { segmentMarkdown, segmentPlainText, type SegmentDraft } from './segment';
+import { looksLikeEpub } from './epub';
 
 /** Boyut sınırları (bellek/disk tükenmesine karşı). */
 export const MAX_PDF_BYTES = 200 * 1024 * 1024;
 export const MAX_TEXT_BYTES = 20 * 1024 * 1024;
 export const MAX_IMAGE_BYTES = 30 * 1024 * 1024;
+export const MAX_EPUB_BYTES = 150 * 1024 * 1024;
 
 export type DetectedKind = { sourceType: SourceType; mimeType: string };
 
@@ -14,6 +16,7 @@ export type DetectedKind = { sourceType: SourceType; mimeType: string };
 export function detectKind(name: string, bytes: Uint8Array): DetectedKind {
   const b = bytes;
   const starts = (...sig: number[]) => sig.every((v, i) => b[i] === v);
+  if (looksLikeEpub(b)) return { sourceType: 'epub', mimeType: 'application/epub+zip' };
   if (starts(0x50, 0x4b, 0x03, 0x04) || starts(0x50, 0x4b, 0x05, 0x06) || starts(0x1f, 0x8b) || starts(0x37, 0x7a, 0xbc, 0xaf) || starts(0x52, 0x61, 0x72, 0x21)) {
     throw new AppError('SRC-005');
   }
@@ -46,7 +49,7 @@ function looksBinary(b: Uint8Array): boolean {
 }
 
 export function checkSize(kind: SourceType, size: number): void {
-  const limit = kind === 'pdf' ? MAX_PDF_BYTES : kind === 'image' ? MAX_IMAGE_BYTES : MAX_TEXT_BYTES;
+  const limit = kind === 'pdf' ? MAX_PDF_BYTES : kind === 'image' ? MAX_IMAGE_BYTES : kind === 'epub' ? MAX_EPUB_BYTES : MAX_TEXT_BYTES;
   if (size > limit) throw new AppError('SRC-004', String(limit));
   if (size === 0) throw new AppError('SRC-007', 'empty-file');
 }

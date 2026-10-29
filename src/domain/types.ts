@@ -16,7 +16,7 @@ export interface BaseEntity {
   isSample?: boolean;
 }
 
-export type SourceType = 'pdf' | 'txt' | 'markdown' | 'note' | 'paste' | 'image';
+export type SourceType = 'pdf' | 'txt' | 'markdown' | 'note' | 'paste' | 'image' | 'epub';
 
 export type ProcessingStatus = 'pending' | 'processing' | 'ready' | 'partial' | 'failed' | 'empty';
 
@@ -165,10 +165,14 @@ export interface ReviewEvent {
   button: ReviewButton;
   responseDurationMs?: number;
   answerText?: string;
+  /** Cevabı görmeden önce kullanıcının bildirdiği güven: 1 emin değilim, 2 biraz, 3 eminim (isteğe bağlı). */
+  confidence?: Confidence;
   scheduleBefore: ScheduleSnapshot;
   scheduleAfter: ScheduleSnapshot;
   isSample?: boolean;
 }
+
+export type Confidence = 1 | 2 | 3;
 
 export interface ScheduleSnapshot {
   repetitionCount: number;
@@ -194,7 +198,7 @@ export interface ApplicationTask extends BaseEntity {
   attempts: TaskAttempt[];
 }
 
-export type SessionType = 'reading' | 'review' | 'learn';
+export type SessionType = 'reading' | 'review' | 'learn' | 'practice';
 
 export interface LearningSession {
   id: string;
@@ -244,6 +248,10 @@ export interface Settings {
   showQuotes: boolean;
   dailyGoals: DailyGoals;
   storeTypedAnswers: boolean;
+  /** Tekrarda cevaptan önce güven sorulsun mu (üstbiliş ölçümü). */
+  askConfidence: boolean;
+  /** Tekrar kuyruğunu konu/kavramlara göre karıştır. */
+  interleave: boolean;
   language: Language;
   onboardingDone: boolean;
   shortcuts: Record<string, string>;

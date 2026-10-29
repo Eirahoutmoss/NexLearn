@@ -20,7 +20,7 @@ import { hasSample, loadSample, removeSample } from '../../sample/sample';
 import { eventToCombo } from '../../app/shortcuts';
 import { isAppError } from '../../domain/errors';
 
-const SECTIONS = ['appearance', 'reading', 'home', 'privacy', 'data', 'keyboard', 'language', 'about'] as const;
+const SECTIONS = ['appearance', 'reading', 'review', 'home', 'privacy', 'data', 'keyboard', 'language', 'about'] as const;
 
 export default function SettingsPage({ section }: { section?: string }) {
   const { t } = useI18n();
@@ -59,6 +59,7 @@ export default function SettingsPage({ section }: { section?: string }) {
         <div className="settings-content">
           <Appearance />
           <Reading />
+          <ReviewPrefs />
           <HomePrefs />
           <Privacy />
           <DataSection />
@@ -183,6 +184,19 @@ function Reading() {
         {t('settings.previewText')}
       </p>
       <Switch label={t('reader.ruler')} hint={t('reader.rulerHint')} checked={settings.readingRuler} onChange={(v) => void updateSettings({ readingRuler: v })} />
+    </Section>
+  );
+}
+
+/* ------------------------------ Tekrar ------------------------------ */
+
+function ReviewPrefs() {
+  const { t } = useI18n();
+  const { settings, updateSettings } = useApp();
+  return (
+    <Section id="review">
+      <Switch label={t('settings.interleave')} hint={t('settings.interleaveHint')} checked={settings.interleave} onChange={(v) => void updateSettings({ interleave: v })} />
+      <Switch label={t('settings.askConfidence')} hint={t('settings.askConfidenceHint')} checked={settings.askConfidence} onChange={(v) => void updateSettings({ askConfidence: v })} />
     </Section>
   );
 }

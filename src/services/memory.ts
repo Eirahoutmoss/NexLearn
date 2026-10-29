@@ -4,7 +4,7 @@ import { AppError } from '../domain/errors';
 import { newId, nowIso } from '../domain/ids';
 import { ALGORITHM_VERSION, BUTTON_RATING, endOfLocalDay, explainSchedule, initialSchedule, schedule, type ScheduleReason } from '../domain/scheduler';
 import { normalizeForSearch } from '../domain/text';
-import type { LearningItem, LearningItemType, ReviewButton, ReviewEvent, ReviewState, ScheduleSnapshot, SourceRef } from '../domain/types';
+import type { Confidence, LearningItem, LearningItemType, ReviewButton, ReviewEvent, ReviewState, ScheduleSnapshot, SourceRef } from '../domain/types';
 
 export interface CardInput {
   itemType?: LearningItemType;
@@ -174,7 +174,7 @@ export interface ReviewResult {
 export async function recordReview(
   itemId: string,
   button: ReviewButton,
-  opts: { now?: Date; responseDurationMs?: number; answerText?: string } = {},
+  opts: { now?: Date; responseDurationMs?: number; answerText?: string; confidence?: Confidence } = {},
 ): Promise<ReviewResult> {
   const now = opts.now ?? new Date();
   const rating = BUTTON_RATING[button];
@@ -198,6 +198,7 @@ export async function recordReview(
     button,
     ...(opts.responseDurationMs != null ? { responseDurationMs: Math.round(opts.responseDurationMs) } : {}),
     ...(opts.answerText?.trim() ? { answerText: opts.answerText.trim().slice(0, 2000) } : {}),
+    ...(opts.confidence ? { confidence: opts.confidence } : {}),
     scheduleBefore: before,
     scheduleAfter: after,
     ...(item.isSample ? { isSample: true } : {}),

@@ -14,3 +14,4 @@ src-tauri/gen/schemas/
 # Yerel çalışma notları (depoya girmez)
 CLAUDE.md
 docs/NEXLEARN_VISION.md
+public/ocr/

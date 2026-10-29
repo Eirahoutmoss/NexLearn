@@ -28,7 +28,7 @@ test('metin katmanlı PDF: sayfa konumları korunur, sayfa görünümü çizilir
   await expect.poll(async () => canvas.evaluate((c: HTMLCanvasElement) => c.width), { timeout: 15000 }).toBeGreaterThan(100);
 });
 
-test('taranmış PDF: metin yok uyarısı (OCR sonraki sürümde)', async ({ page }) => {
+test('taranmış PDF: metin yok uyarısı ve OCR seçeneği', async ({ page }) => {
   await openApp(page);
   const dialog = await importFiles(page, [{ name: 'scan.pdf', mimeType: 'application/pdf', buffer: await makeScannedPdf() }]);
   await expect(dialog.getByText('Metin bulunamadı')).toBeVisible({ timeout: 20000 });

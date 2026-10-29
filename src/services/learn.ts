@@ -4,7 +4,7 @@ import { AppError } from '../domain/errors';
 import { newId, nowIso } from '../domain/ids';
 import { validateRelation } from '../domain/relations';
 import { normalizeForSearch } from '../domain/text';
-import type { ApplicationTask, Concept, ConceptRelation, RelationType, SourceRef, TaskAttempt } from '../domain/types';
+import type { ApplicationTask, Concept, ConceptRelation, Provenance, RelationType, SourceRef, TaskAttempt } from '../domain/types';
 
 export interface ConceptInput {
   label: string;
@@ -18,7 +18,7 @@ export interface ConceptInput {
 export const listConcepts = () => listLive('concepts');
 export const listRelations = () => listLive('relations');
 
-export async function createConcept(input: ConceptInput, opts: { isSample?: boolean } = {}): Promise<Concept> {
+export async function createConcept(input: ConceptInput, opts: { isSample?: boolean; provenance?: Provenance } = {}): Promise<Concept> {
   const label = input.label.trim();
   if (!label) throw new AppError('VAL-001', 'label');
   return createEntity('concepts', {
@@ -27,7 +27,7 @@ export async function createConcept(input: ConceptInput, opts: { isSample?: bool
     explanation: input.explanation?.trim() ?? '',
     examples: (input.examples ?? []).map((e) => e.trim()).filter(Boolean),
     userConfirmed: input.userConfirmed ?? true,
-    provenance: 'user',
+    provenance: opts.provenance ?? 'user',
     sourceRefs: input.sourceRefs ?? [],
     position: null,
     ...(opts.isSample ? { isSample: true } : {}),

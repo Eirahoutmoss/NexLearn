@@ -34,7 +34,7 @@ export const routes = {
   home: () => '/',
   library: () => '/library',
   read: (sourceId: string, segmentId?: string) => `/read/${encodeURIComponent(sourceId)}${segmentId ? `?seg=${encodeURIComponent(segmentId)}` : ''}`,
-  review: (tab?: 'today' | 'cards' | 'history') => `/review${tab && tab !== 'today' ? `?tab=${tab}` : ''}`,
+  review: (tab?: 'today' | 'practice' | 'cards' | 'history') => `/review${tab && tab !== 'today' ? `?tab=${tab}` : ''}`,
   card: (id: string) => `/review?tab=cards&card=${encodeURIComponent(id)}`,
   map: (conceptId?: string) => `/map${conceptId ? `?concept=${encodeURIComponent(conceptId)}` : ''}`,
   notes: () => '/notes',

@@ -113,7 +113,7 @@ export default function LibraryPage() {
                 label={t('library.type')}
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                options={[{ value: 'all', label: t('common.all') }, ...(['pdf', 'markdown', 'txt', 'note', 'paste', 'image'] as const).map((x) => ({ value: x, label: t(`sourceType.${x}`) }))]}
+                options={[{ value: 'all', label: t('common.all') }, ...(['pdf', 'epub', 'markdown', 'txt', 'note', 'paste', 'image'] as const).map((x) => ({ value: x, label: t(`sourceType.${x}`) }))]}
               />
               {allTags.length > 0 && (
                 <SelectField label={t('library.tag')} value={tag} onChange={(e) => setTag(e.target.value)} options={[{ value: 'all', label: t('common.all') }, ...allTags.map((x) => ({ value: x, label: `#${x}` }))]} />

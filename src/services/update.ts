@@ -43,6 +43,7 @@ export interface ReleaseInfo {
   publishedAt: string;
   pageUrl: string;
   installer?: ReleaseAsset;
+  msi?: ReleaseAsset;
   checksums?: ReleaseAsset;
 }
 
@@ -72,6 +73,7 @@ export function parseRelease(raw: unknown): ReleaseInfo {
     publishedAt: typeof r.published_at === 'string' ? r.published_at : '',
     pageUrl: typeof r.html_url === 'string' && r.html_url.startsWith(`https://github.com/${REPO}/`) ? r.html_url : RELEASES_PAGE,
     installer,
+    msi: assets.find((a) => /\.msi$/i.test(a.name)),
     checksums,
   };
 }
@@ -102,14 +104,17 @@ export async function downloadAndInstall(release: ReleaseInfo, onProgress: (frac
   if (!isTauri()) throw new AppError('UPD-001', 'not-desktop');
   if (!release.installer || !release.checksums) throw new AppError('UPD-001', 'assets');
   const [{ invoke }, { listen }] = await Promise.all([import('@tauri-apps/api/core'), import('@tauri-apps/api/event')]);
+  // Kurulum türüne uygun dosya: Program Files altına MSI ile kurulduysa MSI, kullanıcı kurulumunda NSIS.
+  const kind = await invoke<string>('install_kind').catch(() => 'nsis');
+  const asset = kind === 'msi' && release.msi ? release.msi : release.installer;
   const off = await listen<{ downloaded: number; total: number }>('update-progress', (e) => {
     if (e.payload.total > 0) onProgress(e.payload.downloaded / e.payload.total);
   });
   try {
     const path = await invoke<string>('download_update', {
-      url: release.installer.url,
+      url: asset.url,
       checksumsUrl: release.checksums.url,
-      fileName: release.installer.name,
+      fileName: asset.name,
     });
     await invoke('install_update', { path });
   } catch (e) {

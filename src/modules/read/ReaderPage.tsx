@@ -49,6 +49,10 @@ import { countWords, normalizeForSearch } from '../../domain/text';
 import type { Annotation, HighlightColor, Source, SourceSegment } from '../../domain/types';
 import { partsText, selectionToParts, splitPieces, wordsPerMinute } from './readerUtils';
 import { PageView } from './PageView';
+import { OcrAction } from './OcrAction';
+import { KeywordSuggestions } from './KeywordSuggestions';
+import { FeynmanResultView, keyTermsAround } from '../learn/FeynmanPanel';
+import { feynmanCheck, type FeynmanResult } from '../../domain/learning';
 
 const RANGE_TYPES = new Set(['highlight', 'quote', 'note']);
 
@@ -710,6 +714,12 @@ function Reader({ source, segments, annotations, concepts, initialIndex, jumpTo 
               </p>
             </div>
           )}
+          {((source.sourceType === 'pdf' && source.processingStatus === 'empty') || (source.sourceType === 'image' && !source.metadata.ocr)) && <OcrAction source={source} />}
+          {source.metadata.ocr === true && (
+            <p className="inline-notice ocr-notice" role="note">
+              <span>{t('ocr.banner', { confidence: Number(source.metadata.ocrConfidence ?? 0) })}</span>
+            </p>
+          )}
           {view === 'page' && source.sourceType === 'pdf' ? (
             <PageView
               source={source}
@@ -791,6 +801,7 @@ function Reader({ source, segments, annotations, concepts, initialIndex, jumpTo 
             )}
             {panelTab === 'concepts' && (
               <div className="stack-sm">
+                <KeywordSuggestions source={source} segments={segments} onGo={(i) => scrollToIndex(i, { flash: true })} />
                 {concepts.length === 0 && <p className="muted">{t('reader.noConcepts')}</p>}
                 <ul className="mini-list">
                   {concepts.map((c) => {
@@ -1066,7 +1077,12 @@ function ExplainBox({ segment, sectionLabel, existing }: { segment?: SourceSegme
   const { toast, reportError } = useApp();
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
+  const [check, setCheck] = useState<FeynmanResult | null>(null);
   if (!segment) return null;
+  const runCheck = async () => {
+    const terms = await keyTermsAround([{ sourceId: segment.sourceId, segmentId: segment.id }], [], 5, 8);
+    setCheck(feynmanCheck(text, terms));
+  };
   const save = async () => {
     if (!text.trim()) return;
     setSaving(true);
@@ -1089,10 +1105,16 @@ function ExplainBox({ segment, sectionLabel, existing }: { segment?: SourceSegme
       <textarea className="input textarea" rows={3} value={text} onChange={(e) => setText(e.target.value)} aria-labelledby="explain-title" placeholder={t('reader.explainPlaceholder')} />
       <div className="row-between">
         <span className="field-hint">{existing.length ? t('reader.explanationCount', { count: existing.length }) : ''}</span>
-        <Button size="sm" variant="primary" onClick={() => void save()} disabled={!text.trim()} loading={saving}>
-          {t('reader.saveExplanation')}
-        </Button>
+        <div className="row-wrap">
+          <Button size="sm" onClick={() => void runCheck()} disabled={!text.trim()}>
+            {t('feynman.check')}
+          </Button>
+          <Button size="sm" variant="primary" onClick={() => void save()} disabled={!text.trim()} loading={saving}>
+            {t('reader.saveExplanation')}
+          </Button>
+        </div>
       </div>
+      {check && <FeynmanResultView result={check} />}
     </section>
   );
 }

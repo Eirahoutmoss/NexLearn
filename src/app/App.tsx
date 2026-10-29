@@ -71,7 +71,7 @@ function Routes() {
       page = <ReaderPage sourceId={route.segments[1]} segmentId={route.query.get('seg') ?? undefined} />;
       break;
     case 'review':
-      page = <ReviewPage tab={route.query.get('tab') ?? 'today'} cardId={route.query.get('card') ?? undefined} />;
+      page = <ReviewPage tab={route.query.get('tab') ?? 'today'} cardId={route.query.get('card') ?? undefined} scope={route.query.get('scope') ?? undefined} />;
       break;
     case 'map':
       page = <MapPage conceptId={route.query.get('concept') ?? undefined} view={route.query.get('view') ?? undefined} />;

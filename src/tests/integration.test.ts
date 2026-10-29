@@ -185,3 +185,14 @@ describe('ayarlar ve çakışma', () => {
     expect(extractTags('#Ağ ve #kuantum_fizik ama e#posta değil')).toEqual(['ağ', 'kuantum_fizik']);
   });
 });
+
+describe('EPUB içe aktarma', () => {
+  it('EPUB kaynak olur, başlığı kitaptan alınır', async () => {
+    const { makeEpub } = await import('./fixtures');
+    const r = await importFile({ name: 'kitap.epub', bytes: makeEpub([{ title: 'Bölüm 1', body: '<p>İlk paragraf burada.</p>' }], { title: 'Gerçek Başlık' }) });
+    if (r.status !== 'imported') throw new Error();
+    expect(r.source.sourceType).toBe('epub');
+    expect(r.source.title).toBe('Gerçek Başlık');
+    expect(r.source.segmentCount).toBe(2);
+  });
+});

@@ -13,6 +13,7 @@ import { listConcepts, listRelations, listTasks } from '../../services/learn';
 import { listAllAnnotations } from '../../services/annotations';
 import { countByDay, hardCards, lastNDays, readingMinutesByDay, recallBreakdown, summarize, totalReadingMinutes, type Rate } from '../../services/progress';
 import { downloadText } from '../../services/export/download';
+import { calibration } from '../../domain/learning';
 
 async function loadProgress() {
   const [sources, states, sessions, items, reviewStates, events, concepts, relations, tasks, annotations] = await Promise.all([
@@ -56,6 +57,9 @@ export default function ProgressPage() {
       notesByDay: countByDay(data.annotations.filter((a) => a.annotationType === 'note' || a.annotationType === 'explanation'), (a) => a.createdAt, days),
       attemptsByDay: countByDay(data.tasks.flatMap((x) => x.attempts), (a) => a.at, days),
       hard: hardCards(data.items, data.reviewStates).slice(0, 10),
+      calib: calibration(data.events),
+      practice: data.sessions.filter((x) => x.sessionType === 'practice').sort((a, b) => b.startedAt.localeCompare(a.startedAt)).slice(0, 10),
+      itemById: new Map(data.items.map((i) => [i.id, i])),
       stateBy: new Map(data.states.map((s) => [s.sourceId, s])),
     };
   }, [data, days]);
@@ -181,6 +185,73 @@ export default function ProgressPage() {
               <Stat label={t('progress.oneWeek')} value={pct(recall.oneWeek)} sub={t('progress.oneWeekHint')} />
             </ul>
             <BarChart title={t('progress.chartReviews')} values={derived.reviewsByDay} labels={dayLabels} fullLabels={dayFull} color="var(--mod-memory)" unit={t('progress.reviewsUnit')} />
+            <Card>
+              <h2 className="card-title">{t('progress.calibTitle')}</h2>
+              {derived.calib.answered === 0 ? (
+                <p className="muted">{t('progress.calibEmpty')}</p>
+              ) : (
+                <>
+                  <table className="shortcut-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">{t('progress.calibConfidence')}</th>
+                        <th scope="col">{t('progress.calibAttempts')}</th>
+                        <th scope="col">{t('progress.calibCorrect')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {derived.calib.rows.map((r) => (
+                        <tr key={r.confidence}>
+                          <th scope="row">{t(`review.confidence.${r.confidence}`)}</th>
+                          <td>{formatNumber(r.attempts)}</td>
+                          <td>{r.percent == null ? '—' : `%${r.percent}`}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className="field-hint">{t('progress.calibNote', { under: derived.calib.underconfident })}</p>
+                  {derived.calib.confidentlyWrong.length > 0 && (
+                    <>
+                      <h3 className="section-mini">{t('progress.confidentlyWrong')}</h3>
+                      <ul className="list">
+                        {derived.calib.confidentlyWrong.slice(0, 10).map((id) => {
+                          const it = derived.itemById.get(id);
+                          if (!it) return null;
+                          return (
+                            <li key={id} className="list-row">
+                              <p className="list-title">{it.prompt}</p>
+                              {it.sourceRefs[0] && (
+                                <a className="link-inline" href={`#${routes.read(it.sourceRefs[0].sourceId, it.sourceRefs[0].segmentId)}`}>
+                                  <ExternalLink size={14} aria-hidden="true" /> {t('progress.restudy')}
+                                </a>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </>
+                  )}
+                </>
+              )}
+            </Card>
+            <Card>
+              <h2 className="card-title">{t('progress.practiceTitle')}</h2>
+              {derived.practice.length === 0 ? (
+                <p className="muted">{t('progress.practiceEmpty')}</p>
+              ) : (
+                <ul className="list">
+                  {derived.practice.map((p) => (
+                    <li key={p.id} className="list-row">
+                      <span>{formatDate(p.startedAt, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+                      <span className="muted">
+                        {t('progress.practiceRow', { score: p.activitySummary.score ?? 0, total: p.activitySummary.total ?? 0, knew: p.activitySummary.knew ?? 0 })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className="field-hint">{t('progress.practiceNote')}</p>
+            </Card>
             <Card>
               <h2 className="card-title">{t('progress.hardCards')}</h2>
               {derived.hard.length === 0 ? (

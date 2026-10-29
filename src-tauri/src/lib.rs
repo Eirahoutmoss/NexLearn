@@ -4,14 +4,16 @@
 //! kullanıcının düğmeyle başlattığı güncelleme indirme/kurma işlemini yapar:
 //! - Yalnızca bu deponun GitHub sürüm adreslerinden indirir.
 //! - Kurulum dosyasını SHA256SUMS içindeki özetle doğrular; uyuşmazsa dosyayı siler.
-//! - Kurucu yalnızca geçici güncelleme klasöründen çalıştırılır.
+//! - Kurucu yalnızca uygulamanın kendi yerel veri klasöründeki `updates` alt klasöründen çalıştırılır
+//!   (genel %TEMP% yerine; antivirüs sezgilerinin "geçiciden çalıştırma" işaretini önler).
+//! - Kalıcı arka plan hizmeti, otomatik başlatma, kanca ya da açık port yoktur.
 
 use futures_util::StreamExt;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 
 const DOWNLOAD_PREFIX: &str = "https://github.com/Eirahoutmoss/NexLearn/releases/download/";
 const MAX_INSTALLER_BYTES: u64 = 500 * 1024 * 1024;
@@ -22,8 +24,28 @@ struct Progress {
     total: u64,
 }
 
-fn update_dir() -> PathBuf {
-    std::env::temp_dir().join("nexlearn-update")
+fn update_dir(app: &AppHandle) -> PathBuf {
+    app.path()
+        .app_local_data_dir()
+        .unwrap_or_else(|_| std::env::temp_dir().join("NexLearn"))
+        .join("updates")
+}
+
+/// Program Files altındaki kurulum MSI ile (makine geneli), diğerleri NSIS ile (kullanıcı) yapılmıştır.
+fn kind_for_exe(exe: &Path) -> &'static str {
+    let s = exe.to_string_lossy().to_ascii_lowercase().replace('/', "\\");
+    if s.contains("\\program files\\") || s.contains("\\program files (x86)\\") {
+        "msi"
+    } else {
+        "nsis"
+    }
+}
+
+#[tauri::command]
+fn install_kind() -> String {
+    std::env::current_exe()
+        .map(|p| kind_for_exe(&p).to_string())
+        .unwrap_or_else(|_| "nsis".into())
 }
 
 fn valid_file_name(name: &str) -> bool {
@@ -92,8 +114,16 @@ async fn download_update(
         return Err("too-large".into());
     }
 
-    let dir = update_dir();
-    std::fs::create_dir_all(&dir).map_err(|_| "temp-dir")?;
+    let dir = update_dir(&app);
+    std::fs::create_dir_all(&dir).map_err(|_| "update-dir")?;
+    // Eski indirmeleri temizle (yalnızca bu klasördeki kurucular).
+    if let Ok(entries) = std::fs::read_dir(&dir) {
+        for e in entries.flatten() {
+            if e.file_name().to_str().map(valid_file_name).unwrap_or(false) {
+                let _ = std::fs::remove_file(e.path());
+            }
+        }
+    }
     let path = dir.join(&file_name);
     let mut file = std::fs::File::create(&path).map_err(|_| "create-file")?;
     let mut hasher = Sha256::new();
@@ -136,7 +166,7 @@ fn is_inside(child: &Path, parent: &Path) -> bool {
 fn install_update(app: AppHandle, path: String) -> Result<(), String> {
     let p = PathBuf::from(&path);
     let name = p.file_name().and_then(|n| n.to_str()).unwrap_or_default().to_string();
-    if !valid_file_name(&name) || !p.is_file() || !is_inside(&p, &update_dir()) {
+    if !valid_file_name(&name) || !p.is_file() || !is_inside(&p, &update_dir(&app)) {
         return Err("invalid-path".into());
     }
     let lower = name.to_ascii_lowercase();
@@ -154,7 +184,7 @@ fn install_update(app: AppHandle, path: String) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![download_update, install_update])
+        .invoke_handler(tauri::generate_handler![download_update, install_update, install_kind])
         .run(tauri::generate_context!())
         .expect("NexLearn başlatılamadı");
 }
@@ -170,6 +200,12 @@ mod tests {
         assert!(!valid_file_name("../evil.exe"));
         assert!(!valid_file_name("script.ps1"));
         assert!(!valid_file_name("a b.exe"));
+    }
+
+    #[test]
+    fn install_kind_from_path() {
+        assert_eq!(kind_for_exe(Path::new("C:\\Program Files\\NexLearn\\nexlearn.exe")), "msi");
+        assert_eq!(kind_for_exe(Path::new("C:\\Users\\h\\AppData\\Local\\NexLearn\\nexlearn.exe")), "nsis");
     }
 
     #[test]

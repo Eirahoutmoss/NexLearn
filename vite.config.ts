@@ -43,6 +43,9 @@ export default defineConfig({
             },
             workbox: {
               globPatterns: ['**/*.{js,mjs,css,html,svg,png,woff2}'],
+              // OCR dosyaları (~9 MB) ilk kurulumda indirilmez; ilk kullanımda önbelleğe alınır.
+              globIgnores: ['ocr/**'],
+              runtimeCaching: [{ urlPattern: /\/ocr\//, handler: 'CacheFirst', options: { cacheName: 'nexlearn-ocr' } }],
               maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
               navigateFallback: 'index.html',
             },

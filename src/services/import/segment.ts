@@ -12,6 +12,8 @@ export interface SegmentDraft {
   endOffset: number;
   headingPath: string[];
   extractionMethod: ExtractionMethod;
+  /** OCR güveni (0-100), yalnızca OCR segmentlerinde. */
+  confidence?: number;
 }
 
 export function finalizeSegments(sourceId: string, drafts: SegmentDraft[], isSample?: boolean): SourceSegment[] {

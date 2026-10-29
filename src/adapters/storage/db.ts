@@ -18,7 +18,8 @@ import type {
 
 /** IndexedDB şema sürümü. Artırıldığında `upgrade` içine göç adımı eklenir (bkz. docs/DATA_MODEL.md). */
 export const DB_VERSION = 1;
-export const DATA_SCHEMA_VERSION = '1.0.0';
+/** 1.1.0: ReviewEvent.confidence, ayarlarda askConfidence/interleave, epub kaynak türü, practice oturumu (geriye uyumlu eklemeler). */
+export const DATA_SCHEMA_VERSION = '1.1.0';
 
 export interface Snapshot {
   id: string;

@@ -28,6 +28,8 @@ interface Extracted {
   errorCode?: string;
   pageCount?: number;
   metadata: Source['metadata'];
+  /** Biçimin kendi başlığı (ör. EPUB dc:title); varsa dosya adından türetilen başlığın yerine geçer. */
+  title?: string;
 }
 
 async function extract(
@@ -37,13 +39,20 @@ async function extract(
   title: string,
 ): Promise<Extracted> {
   if (kind === 'image') {
-    // Görseller kaynak olarak saklanır; OCR sonraki aşamada (Aşama 7). Not ve kart bağlanabilmesi için
+    // Görseller kaynak olarak saklanır; metin isteğe bağlı OCR ile sonradan çıkarılır (services/ocr.ts). Not ve kart bağlanabilmesi için
     // görselin başlığı tek bir "kullanıcı" segmenti (altyazı) olarak tutulur; bu çıkarılmış metin değildir.
     return {
       drafts: [{ segmentType: 'paragraph', text: title, startOffset: 0, endOffset: title.length, headingPath: [], extractionMethod: 'user' }],
       status: 'ready',
       metadata: { ocr: false },
     };
+  }
+  if (kind === 'epub') {
+    const { parseEpub } = await import('./import/epub');
+    const res = parseEpub(bytes);
+    const text = res.drafts.map((d) => d.text).join(' ');
+    if (!res.drafts.length || isMeaningless(text)) return { drafts: [], status: 'empty', errorCode: 'SRC-007', metadata: { chapters: res.chapters } };
+    return { drafts: res.drafts, status: 'ready', title: res.title, metadata: { chapters: res.chapters, author: res.author ?? null } };
   }
   if (kind === 'pdf') {
     const { openPdf, extractPdfText } = await import('../adapters/pdf/pdf');
@@ -171,6 +180,7 @@ async function saveSegments(sourceId: string, result: Extracted, isSample?: bool
   }
   const next: Source = {
     ...current,
+    ...(result.title ? { title: result.title.slice(0, 200) } : {}),
     processingStatus: result.status,
     errorCode: result.errorCode,
     pageCount: result.pageCount,
@@ -310,4 +320,27 @@ export async function purgeSource(id: string): Promise<void> {
   await tx.objectStore('readingStates').delete(id);
   await tx.done;
   emitChange(['sources', 'segments', 'files', 'annotations', 'readingStates']);
+}
+
+/**
+ * OCR sonucunu kaynağa uygular: segmentler `extractionMethod: 'ocr'` ile yazılır (normal çıkarımdan ayırt edilir).
+ * Görsellerde altyazı segmenti korunur.
+ */
+export async function applyOcrResult(sourceId: string, drafts: SegmentDraft[], meta: { confidence: number; pages: number; langs: string }): Promise<Source> {
+  const source = await getEntity('sources', sourceId);
+  if (!source) throw new AppError('DB-004', 'sources');
+  const existing = await getSegments(sourceId);
+  const keep = source.sourceType === 'image' ? existing.filter((s) => s.extractionMethod === 'user').map((s) => ({
+    segmentType: s.segmentType, text: s.text, startOffset: s.startOffset, endOffset: s.endOffset, headingPath: s.headingPath, extractionMethod: s.extractionMethod,
+  })) : [];
+  const all = [...keep, ...drafts];
+  const text = drafts.map((d) => d.text).join(' ');
+  const ok = drafts.length > 0 && !isMeaningless(text);
+  return saveSegments(sourceId, {
+    drafts: ok ? all : keep,
+    status: ok ? 'ready' : source.sourceType === 'image' ? 'ready' : 'empty',
+    errorCode: ok ? undefined : source.sourceType === 'image' ? undefined : 'SRC-003',
+    pageCount: source.pageCount,
+    metadata: { ocr: ok, ocrConfidence: Math.round(meta.confidence), ocrLangs: meta.langs, ocrPages: meta.pages },
+  }, source.isSample);
 }

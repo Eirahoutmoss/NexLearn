@@ -25,6 +25,9 @@ import { listSources } from '../../services/sources';
 import { RELATION_TYPES, type Concept, type ConceptRelation, type RelationType, type Source } from '../../domain/types';
 import { normalizeForSearch } from '../../domain/text';
 import { forceLayout, nearestInDirection } from './layout';
+import { conceptStrength, type Strength } from '../../domain/learning';
+import { listCards, listReviewEvents, listReviewStates } from '../../services/memory';
+import { FeynmanPanel } from './FeynmanPanel';
 
 const W = 1200;
 const H = 800;
@@ -33,18 +36,27 @@ interface MapData {
   concepts: Concept[];
   relations: ConceptRelation[];
   sources: Map<string, Source>;
+  strengths: Map<string, Strength>;
 }
 
 async function loadMap(): Promise<MapData> {
-  const [concepts, relations, sources] = await Promise.all([listConcepts(), listRelations(), listSources()]);
+  const [concepts, relations, sources, items, states, events] = await Promise.all([listConcepts(), listRelations(), listSources(), listCards(), listReviewStates(), listReviewEvents()]);
   const ids = new Set(concepts.map((c) => c.id));
-  return { concepts, relations: relations.filter((r) => ids.has(r.fromConceptId) && ids.has(r.toConceptId)), sources: new Map(sources.map((s) => [s.id, s])) };
+  // Her kartın son tekrar puanı (unutma haritası için).
+  const lastRatings = new Map<string, number>();
+  for (const e of events) lastRatings.set(e.learningItemId, e.rating);
+  const now = new Date();
+  const strengths = new Map(concepts.map((c) => [c.id, conceptStrength(c.id, items, states, lastRatings, now)]));
+  return { concepts, relations: relations.filter((r) => ids.has(r.fromConceptId) && ids.has(r.toConceptId)), sources: new Map(sources.map((s) => [s.id, s])), strengths };
 }
+
+const STRENGTH_MARK: Record<Strength, string> = { strong: '✓', fading: '~', forgotten: '!', new: '○', none: '' };
 
 export default function MapPage({ conceptId, view }: { conceptId?: string; view?: string }) {
   const { t } = useI18n();
   const { openConceptEditor } = useDialogs();
-  const { data } = useQuery(loadMap, [], ['concepts', 'relations', 'sources']);
+  const { data } = useQuery(loadMap, [], ['concepts', 'relations', 'sources', 'items', 'reviewStates', 'reviewEvents']);
+  const [showStrength, setShowStrength] = useState(false);
   const [mode, setMode] = useState<'map' | 'list'>(view === 'list' ? 'list' : 'map');
   const [selected, setSelected] = useState<string | undefined>(conceptId);
   const [q, setQ] = useState('');
@@ -118,10 +130,20 @@ export default function MapPage({ conceptId, view }: { conceptId?: string; view?
               <SelectField label={t('map.sourceFilter')} value={srcFilter} onChange={(e) => setSrcFilter(e.target.value)} options={[{ value: 'all', label: t('common.all') }, ...usedSources.map((s) => ({ value: s.id, label: s.title }))]} />
             )}
             <Switch label={t('map.onlyConfirmed')} checked={onlyConfirmed} onChange={setOnlyConfirmed} />
+            <Switch label={t('map.strengthLayer')} checked={showStrength} onChange={setShowStrength} />
           </div>
+          {showStrength && (
+            <ul className="strength-legend" aria-label={t('map.strengthLegend')}>
+              {(['strong', 'fading', 'forgotten', 'new', 'none'] as const).map((k) => (
+                <li key={k} className={`strength-${k}`}>
+                  <span className="strength-chip" aria-hidden="true">{STRENGTH_MARK[k] || '–'}</span> {t(`map.strength.${k}`)}
+                </li>
+              ))}
+            </ul>
+          )}
           <div className={`map-layout ${selectedConcept ? 'with-detail' : ''}`}>
             {mode === 'map' ? (
-              <MapCanvas concepts={filtered.concepts} relations={filtered.relations} selected={selected} onSelect={setSelected} />
+              <MapCanvas concepts={filtered.concepts} relations={filtered.relations} selected={selected} onSelect={setSelected} strengths={showStrength ? data?.strengths : undefined} />
             ) : (
               <ConceptList concepts={filtered.concepts} relations={filtered.relations} all={data?.concepts ?? []} selected={selected} onSelect={setSelected} />
             )}
@@ -138,7 +160,7 @@ export default function MapPage({ conceptId, view }: { conceptId?: string; view?
 
 /* ------------------------------ Harita tuvali ------------------------------ */
 
-function MapCanvas({ concepts, relations, selected, onSelect }: { concepts: Concept[]; relations: ConceptRelation[]; selected?: string; onSelect: (id?: string) => void }) {
+function MapCanvas({ concepts, relations, selected, onSelect, strengths }: { concepts: Concept[]; relations: ConceptRelation[]; selected?: string; onSelect: (id?: string) => void; strengths?: Map<string, Strength> }) {
   const { t } = useI18n();
   const { reportError } = useApp();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -357,18 +379,19 @@ function MapCanvas({ concepts, relations, selected, onSelect }: { concepts: Conc
                   if (el) nodeRefs.current.set(c.id, el);
                   else nodeRefs.current.delete(c.id);
                 }}
-                className={`map-node ${isSel ? 'selected' : ''} ${dim ? 'dim' : ''} ${c.userConfirmed ? '' : 'map-node-suggested'}`}
+                className={`map-node ${isSel ? 'selected' : ''} ${dim ? 'dim' : ''} ${c.userConfirmed ? '' : 'map-node-suggested'} ${strengths ? `strength-${strengths.get(c.id) ?? 'none'}` : ''}`}
                 transform={`translate(${p.x} ${p.y})`}
                 tabIndex={c.id === (focusId ?? concepts[0]?.id) ? 0 : -1}
                 role="button"
                 aria-pressed={isSel}
-                aria-label={t('map.nodeLabel', { label: c.label, count: relations.filter((r) => r.fromConceptId === c.id || r.toConceptId === c.id).length })}
+                aria-label={`${t('map.nodeLabel', { label: c.label, count: relations.filter((r) => r.fromConceptId === c.id || r.toConceptId === c.id).length })}${strengths ? ` · ${t(`map.strength.${strengths.get(c.id) ?? 'none'}`)}` : ''}`}
                 onFocus={() => setFocusId(c.id)}
                 onKeyDown={(e) => onKeyNode(e, c.id)}
                 onPointerDown={(e) => onNodePointerDown(e, c.id)}
               >
                 <rect x={-w / 2} y={-22} width={w} height={44} rx={22} />
                 <text textAnchor="middle" dy="5">
+                  {strengths && STRENGTH_MARK[strengths.get(c.id) ?? 'none'] ? `${STRENGTH_MARK[strengths.get(c.id) ?? 'none']} ` : ''}
                   {label(c.label)}
                 </text>
               </g>
@@ -470,6 +493,15 @@ function ConceptDetail({ concept, data, onClose, onSelect }: { concept: Concept;
       <p className="mini-meta">
         <Badge tone={concept.userConfirmed ? 'success' : 'warning'}>{concept.userConfirmed ? t('map.confirmed') : t('map.suggested')}</Badge> <Badge>{t(`provenance.${concept.provenance}`)}</Badge>
       </p>
+      {(() => {
+        const st = data.strengths.get(concept.id) ?? 'none';
+        return st === 'none' ? null : (
+          <p className={`strength-line strength-${st}`}>
+            <span className="strength-chip" aria-hidden="true">{STRENGTH_MARK[st]}</span> {t(`map.strength.${st}`)} ·{' '}
+            <a href={`#/review?tab=practice&scope=concept:${encodeURIComponent(concept.id)}`}>{t('map.practiceThis')}</a>
+          </p>
+        );
+      })()}
       {concept.description && <p>{concept.description}</p>}
       {concept.explanation ? (
         <blockquote className="own-words">
@@ -598,6 +630,8 @@ function ConceptDetail({ concept, data, onClose, onSelect }: { concept: Concept;
           </form>
         )}
       </section>
+
+      <FeynmanPanel concept={concept} />
 
       <section aria-labelledby="cd-ex">
         <h3 id="cd-ex" className="section-mini">
