@@ -1,6 +1,6 @@
-apply plugin: 'com.android.application'
-
 import groovy.json.JsonSlurper
+
+apply plugin: 'com.android.application'
 
 // Sürüm tek kaynaktan: package.json. versionCode = major*10000 + minor*100 + patch
 def pkg = new JsonSlurper().parse(file('../../package.json'))

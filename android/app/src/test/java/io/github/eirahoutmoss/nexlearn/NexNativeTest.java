@@ -25,7 +25,7 @@ public class NexNativeTest {
 
     @Test
     public void checksums() {
-        String h = "a".repeat(64);
+        String h = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
         assertEquals(h, NexNativePlugin.expectedHash(h + "  NexLearn-0.2.0.apk\n", "NexLearn-0.2.0.apk"));
         assertNull(NexNativePlugin.expectedHash(h + "  other.apk\n", "NexLearn-0.2.0.apk"));
     }
