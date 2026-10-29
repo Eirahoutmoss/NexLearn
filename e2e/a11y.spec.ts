@@ -17,7 +17,7 @@ async function axe(page: Page) {
   return res.violations.map((v) => `${v.id}: ${v.nodes.slice(0, 3).map((n) => n.target.join(' ')).join(' | ')}`);
 }
 
-const ROUTES = ['/', '/library', '/review', '/review?tab=cards', '/map', '/map?view=list', '/notes', '/tasks', '/progress', '/settings', '/help'];
+const ROUTES = ['/', '/library', '/review', '/review?tab=cards', '/review?tab=practice', '/review?tab=duel', '/map', '/map?view=list', '/notes', '/tasks', '/progress', '/settings', '/help'];
 
 for (const theme of ['aydinlik', 'gece', 'kontrast'] as const) {
   test(`erişilebilirlik (axe, WCAG 2.2 AA) — ${theme}`, async ({ page }) => {

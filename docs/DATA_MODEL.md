@@ -1,6 +1,12 @@
 # Veri Modeli
 
-Depolama: IndexedDB veritabanı `nexlearn`, şema sürümü **1** (`DB_VERSION`). Dışa aktarma/yedek şema sürümü **1.0.0** (`DATA_SCHEMA_VERSION`, SemVer).
+Depolama: IndexedDB veritabanı `nexlearn`, şema sürümü **1** (`DB_VERSION`). Dışa aktarma/yedek şema sürümü **1.2.0** (`DATA_SCHEMA_VERSION`, SemVer).
+
+| Şema | Değişiklik (hepsi geriye uyumlu, isteğe bağlı alanlar) |
+|---|---|
+| 1.0.0 | İlk sürüm |
+| 1.1.0 | `ReviewEvent.confidence` (1–3), ayarlarda `askConfidence`, `interleave`; kaynak türü `epub`; oturum türü `practice`; segmentte `confidence` (OCR) |
+| 1.2.0 | Varlıklarda ve segmentlerde `pack: { id, itemId, version }` (paylaşım paketi kökeni); ayarlarda `zihinEnabled` |
 
 ## İlkeler
 - Zamanlar UTC ISO 8601 metin; yerel gösterim arayüzde.
@@ -8,6 +14,7 @@ Depolama: IndexedDB veritabanı `nexlearn`, şema sürümü **1** (`DB_VERSION`)
 - `updateEntity(…, expectedRevision)` farklı sürümde `DB-003` (çakışma) fırlatır.
 - Otomatik içerik ile kullanıcı içeriği `provenance` (`user` | `automatic` | `imported`) ve `userConfirmed` ile ayrılır.
 - Deneme modu kayıtları `isSample: true` taşır ve topluca kaldırılabilir.
+- Paylaşım paketinden gelen kayıtlar `pack` kökeni taşır (bkz. `docs/NEXPACK.md`).
 
 ## Depolar
 | Depo | Anahtar | Dizin | İçerik |
@@ -25,6 +32,7 @@ Depolama: IndexedDB veritabanı `nexlearn`, şema sürümü **1** (`DB_VERSION`)
 | `sessions` | `id` | `startedAt` | Öğrenme oturumu (okuma/tekrar), etkin süre |
 | `readingStates` | `sourceId` | — | Okuma konumu ve en ileri konum |
 | `settings` | `id` (`app`) | — | Ayarlar |
+| `meta` | `key` | — | Uygulama meta verileri: `publishedPacks` (yayımlanan paketler), `duels` (meydan okumalar) |
 | `snapshots` | `id` | — | Geri yükleme öncesi anlık görüntü (yalnızca en sonuncusu) |
 
 ## Göç stratejisi

@@ -8,17 +8,17 @@ cargo test --manifest-path src-tauri/Cargo.toml  # Rust: güncelleme komutu yard
 ```
 CI (`.github/workflows/ci.yml`) bunların hepsini her push/PR’da çalıştırır; ayrıca `npm audit --omit=dev`.
 
-## Son yerel çalıştırma (2026-10-29)
+## Son yerel çalıştırma (2026-10-29, 0.2.0)
 | Komut | Sonuç |
 |---|---|
 | `npm run typecheck` | hatasız |
 | `npm run lint` | hatasız |
-| `npm test` | **111/111** test geçti (10 dosya) |
-| `npm run build` | başarılı; PWA precache 52 dosya |
-| `npx playwright test` | **20/20** geçti (art arda 2 çalıştırmada kararlı) |
-| `cargo test` / `cargo clippy -D warnings` | 2/2 geçti / uyarısız |
-| `npm audit --omit=dev` | 0 açık (fflate 0.8.3’e yükseltildi) |
-| GitHub Actions CI (`80dd67f`) | Web, Rust ve **Windows paketi (NSIS + MSI)** işleri başarılı; kurulum dosyaları artifact olarak üretildi |
+| `npm test` | **140/140** test geçti (19 dosya) |
+| `npm run build` | başarılı; PWA precache 58 dosya (OCR ve Zihin dosyaları ön önbelleğe alınmaz) |
+| `npx playwright test` | **28/28** geçti |
+| `cargo test` / `cargo clippy -D warnings` | 9/9 geçti (NexAktar uçtan uca HTTP testi dahil) / uyarısız |
+| `npm audit --omit=dev` | 0 açık |
+| GitHub Actions CI | Web, Rust, **Windows paketi (NSIS + MSI)** ve **Android (Java birim testleri + APK)** işleri başarılı |
 
 ## Birim testleri (Vitest)
 - **Zamanlayıcı** (`scheduler.test.ts`): ilk/ikinci/üçüncü başarı, unutma, ease alt sınırı, maxInterval, determinizm, geçersiz puan, UTC, düğme eşlemesi, gerekçe.
@@ -28,6 +28,12 @@ CI (`.github/workflows/ci.yml`) bunların hepsini her push/PR’da çalıştır�
 - **Tema kontrastı** (`themes.test.ts`, 31 test): 6 tema × 5 renk tonu için metin/soluk metin/vurgu metni ≥ 4.5:1, odak ve UI bileşenleri ≥ 3:1, vurgu arka planları üzerinde metin ≥ 4.5:1.
 - **Çeviri** (`i18n.test.ts`): koddaki tüm anahtarlar ve dinamik aileler TR ve EN’de mevcut; çoğul ve parametreler.
 - **Harita yerleşimi / vurgu parçalama**: determinizm, sabit düğüm, 200 düğüm < 1 sn, yön gezinmesi, çakışan vurgular.
+- **Öğrenme bilimi** (`learning.test.ts`, `practice.test.ts`): karıştırma (karşıt kavramlar), kalibrasyon, Feynman terim kapsamı, kavram gücü, prova seti ve puanı.
+- **Kavram önerileri** (`keywords.test.ts`): TF-IDF, başlık ağırlığı, iki kelimelik terimler, Türkçe kök gruplama.
+- **EPUB** (`epub.test.ts`): spine sırası, varlık çözümleme, DRM reddi, boyut sınırları. **OCR** (`ocr.test.ts`): metinden segment üretimi.
+- **Güncelleme** (`update.test.ts`): yalnızca depo adresleri, kurucu/MSI/APK seçimi, uygulama dışı etiketlerin ve ön sürümlerin atlanması.
+- **Zihin** (`tasks.test.ts`): manifest doğrulama (yalnız depo adresleri, özet biçimi, yol), kart önerisi doğrulama (tekrar, boş, kaynakta geçmeyen cevap), JSON ayıklama, sahte sağlayıcıyla uçtan uca.
+- **Eşli öğrenme** (`duel.test.ts`): meydan okuma → cevap → karşılaştırma; puanın cevaplardan yeniden hesaplanması; bozuk dosya reddi.
 
 ## Entegrasyon testleri (Vitest + fake-indexeddb)
 - Kaynak → segment → vurgu (çok segmentli) → not → yer imi → kart → tekrar olayı.
@@ -37,6 +43,15 @@ CI (`.github/workflows/ci.yml`) bunların hepsini her push/PR’da çalıştır�
 - Ayarların sınırlandırılması; revizyon çakışması (DB-003).
 - **Yedek**: ZIP gidiş-dönüş (kayıt kayıt eşitlik + orijinal dosya), JSON gidiş-dönüş, şifreli yedek (doğru/yanlış parola), kurcalanmış sağlama toplamı, yol manipülasyonu, listelenmemiş dosya, yapısal bozukluk, sürüm uyumu (yeni major red, yeni minor kabul), geri yükleme geri alma, bozuk girdiler.
 - Metrikler: anlık / 1+ gün / 1+ hafta ayrımı, okuma dakikaları, zor kartlar, CSV kaçışları, arama.
+- **Paylaşım paketi** (`pack.test.ts`): dışa aktar → içe aktar (kimlik eşleme, kişisel veri sızmaması, orijinal dosya), kurumsal güncelleme (içerik yenilenir, kişisel plan ve vurgular korunur, çıkarılanlar çöpe), kurcalama/yol/biçim sürümü reddi.
+
+## Rust (`cargo test`)
+- Güncelleme: dosya adı kuralları, SHA256SUMS ayrıştırma, kurulum türü (MSI/NSIS) tespiti.
+- NexAktar: özel ağ aralıkları, dosya adı temizleme, yüzde kod çözme, sabit süreli karşılaştırma, QR üretimi ve **gerçek HTTP ile uçtan uca oturum** (sayfa + CSP, yanlış anahtar reddi, yükleme, bekleme klasörü, reddetme, kapatma).
+- Zihin: dosya adı kuralları.
+
+## Android (`./gradlew test…UnitTest`)
+- Paylaşılan dosya adı temizleme, APK adı doğrulama, SHA256SUMS ayrıştırma.
 
 ## Uçtan uca (Playwright, Chromium)
 | Test | Kapsam |
@@ -58,6 +73,14 @@ CI (`.github/workflows/ci.yml`) bunların hepsini her push/PR’da çalıştır�
 | duyarlı düzen | 390 px ve %200 yakınlaştırma eşdeğeri (683 px): 6 rotada yatay taşma yok |
 | odak yönetimi | Atlama bağlantısı, modalda odak ve Esc |
 | performans | Soğuk açılış (ölçülen ~0,5 sn, bütçe 2 sn); 100 sayfalık PDF içe aktarma (ölçülen ~2,5 sn, bütçe 10 sn) |
+| EPUB | Bölümler başlık olarak, kitap adı kaynak adı olarak |
+| kavram önerileri + prova | Öneriden kavram ekleme; prova akışı; tekrar planının değişmediği |
+| eminlik | Ayardan açma, cevap öncesi eminlik, “emin olup yanlış” raporu |
+| OCR | Tarayıcıda üretilen yazılı görselden metnin cihazda tanınması ve OCR uyarısı |
+| eşli öğrenme | İki ayrı tarayıcı bağlamında meydan okuma → çözme → cevap dosyası → karşılaştırma tablosu |
+| Zihin | Dosya doğrulama, geçersiz modelin güvenle reddi (motor tarayıcıda gerçekten yüklenir), dosyaları silme |
+| paylaşım paketi | Dışa aktar (indir) → içe aktar → rozet; aynı sürümün tanınması |
+| NexAktar telefon sayfası | Dosya ve metin yükleme, kalan süre, bilgisayardan dosya listesi (ağ isteği yakalanarak) |
 
 ## Performans bütçeleri
 | İşlem | Bütçe | Durum |

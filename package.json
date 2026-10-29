@@ -1,7 +1,7 @@
 {
   "name": "nexlearn",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "NexLearn — oku, anla, hatırla, uygula. Ücretsiz, yerel öncelikli öğrenme uygulaması.",
   "author": "Hasan Güler",
   "license": "MPL-2.0",

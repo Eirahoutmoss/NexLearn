@@ -1,6 +1,6 @@
 [package]
 name = "nexlearn"
-version = "0.1.0"
+version = "0.2.0"
 description = "NexLearn — ücretsiz, yerel öncelikli öğrenme uygulaması"
 authors = ["Hasan Güler"]
 license = "MPL-2.0"

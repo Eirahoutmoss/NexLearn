@@ -770,6 +770,10 @@ function About() {
             ['Inter, Literata, Atkinson Hyperlegible, OpenDyslexic (Fontsource)', 'SIL OFL 1.1'],
             ['Workbox (vite-plugin-pwa)', 'MIT'],
             ['Tauri', 'Apache-2.0 / MIT'],
+            ['tesseract.js (OCR)', 'Apache-2.0'],
+            ['wllama / llama.cpp (Zihin)', 'MIT'],
+            ['Capacitor (Android)', 'MIT'],
+            ['tiny_http, qrcode (NexAktar)', 'Apache-2.0 / MIT'],
           ].map(([n, l]) => (
             <li key={n}>
               {n} — {l}

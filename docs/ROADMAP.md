@@ -24,15 +24,29 @@ Durum işaretleri yalnızca **çalıştırılmış testlerle doğrulanmış** i�
 ## Aşama 6 — Dışa aktarma, geri yükleme, sağlamlaştırma — **tamam**
 - JSON/Markdown/CSV, ZIP yedek + şifreleme, doğrulama, geri yükleme + geri alma, tüm veriyi silme; PWA çevrimdışı; axe erişilebilirlik testleri; performans bütçe testleri; temalar; TR/EN; düğmeyle güncelleme (masaüstü + PWA).
 
+## Aşama 7 — Öğrenme bilimi ve içe aktarma genişlemesi — **tamam**
+- Yerel OCR (Tesseract.js, Türkçe + İngilizce; taranmış PDF ve görseller), DRM'siz EPUB.
+- Sınav provası (tekrar planını değiştirmez), eminlik sorusu ve kalibrasyon raporu, karışık (interleaved) tekrar.
+- Kavram haritasında hatırlama katmanı, Feynman anlatım denetimi, modelsiz (TF-IDF) kavram önerileri.
+
+## Aşama 8 — Paylaşım ve cihazlar — **tamam**
+- NexAktar: telefondan (Android/iPhone, uygulamasız) yerel ağ üzerinden dosya/fotoğraf/metin gönderme, ters yönde alma (`docs/NEXAKTAR.md`).
+- `.nexpack` paketleri: çalışma grubu ve sürümlü kurumsal bilgi tabanı (`docs/NEXPACK.md`).
+- Eşli öğrenme: sunucusuz meydan okuma dosyaları (`.nexduel`).
+- Android uygulaması (Capacitor): paylaş menüsü, “Birlikte aç”, uygulama içi doğrulamalı APK güncellemesi.
+
+## Aşama 9 — Zihin (isteğe bağlı yerel yapay zekâ) — **tamam**
+- wllama ile cihaz üzerinde küçük dil modeli; kart önerisi, basit açıklama, anlatım değerlendirmesi. Çekirdekten bağımsız paket (`docs/ZIHIN.md`).
+
 ## Doğrulanmayı bekleyenler
-- Windows kurulum paketinin gerçek bir Windows makinede kurulup güncellemenin uçtan uca denenmesi (paket CI’da Windows’ta başarıyla derleniyor; kurulum ve güncelleme akışı gerçek bir Windows makinede henüz denenmedi).
-- Ekran okuyucuyla (NVDA/Narrator) manuel kritik akış denemesi.
+- Android APK'nın gerçek bir cihazda kurulup paylaş menüsü ve güncellemenin denenmesi (APK CI'da derleniyor ve birim testleri geçiyor).
+- NexAktar'ın gerçek bir Windows + telefon ağında denenmesi (sunucu uçtan uca Rust testinde ve telefon sayfası tarayıcı testinde doğrulandı).
+- Zihin'in gerçek bir modelle denenmesi (motor tarayıcıda yükleniyor, görevler sahte modelle test edildi; model dosyası yayımlanınca).
+- Ekran okuyucuyla (NVDA/Narrator, TalkBack) manuel kritik akış denemesi.
 - Düşük kapasiteli cihazda bellek ölçümü (< 200 MB boşta).
 
-## Aşama 7 — İleri özellikler (planlı)
-- Yerel OCR (Tesseract.js), EPUB ve web sayfası içe aktarma, ses/video transkripsiyonu.
-- İsteğe bağlı model sağlayıcısı (varsayılan kapalı, şema doğrulamalı, provenance’lı öneriler).
-- Kullanıcı kontrollü cihazlar arası senkronizasyon (revizyon tabanlı çakışma çözümü) ve birleştirmeli geri yükleme.
-- Android (Capacitor) paketi.
-- Kod imzalama (Authenticode) ve güncellemede imza doğrulaması.
-- Kaynaklar arası karşılaştırma, gelişmiş haritalar (katmanlar), eklenti mimarisi (izin modeli).
+## Sonraya bırakılanlar (bilinçli olarak)
+- Kullanıcı kontrollü cihazlar arası eşitleme (revizyon tabanlı çakışma çözümü) ve birleştirmeli geri yükleme.
+- Lisanslama.
+- Kod imzalama (Authenticode) ve güncellemede imza doğrulaması — imza sertifikası alınınca.
+- Web sayfası ve ses/video içe aktarma, kaynaklar arası karşılaştırma, eklenti mimarisi (izin modeli).

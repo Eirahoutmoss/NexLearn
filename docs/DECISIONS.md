@@ -35,7 +35,7 @@ Biçim: Başlık · Tarih · Durum · Bağlam · Seçenekler · Karar · Sonuçl
 ## ADR-007 Güncelleme mekanizması
 - **Bağlam:** Nex ailesi kuralı: düğmeyle GitHub’daki son sürümü denetle, uygulama içinden indir ve kur. Şartname: otomatik ağ trafiği yok.
 - **Seçenekler:** (a) `tauri-plugin-updater` (imza anahtarı + gizli anahtar yönetimi), (b) kendi Rust komutları + `SHA256SUMS.txt`.
-- **Karar:** (b). `download_update` yalnızca bu deponun `releases/download/` adreslerini kabul eder, dosya adını doğrular, boyutu sınırlar, SHA-256’yı karşılaştırır; `install_update` yalnız geçici güncelleme klasöründeki kurucuyu çalıştırır. NSIS `currentUser` kurulumu sayesinde yönetici izni gerekmez. Web/PWA’da service worker yeni sürümü sorar (otomatik yenileme yok).
+- **Karar:** (b). `download_update` yalnızca bu deponun `releases/download/` adreslerini kabul eder, dosya adını doğrular, boyutu sınırlar, SHA-256’yı karşılaştırır; `install_update` yalnız uygulamanın `updates` klasöründeki kurucuyu çalıştırır (0.2.0'dan itibaren `%TEMP%` yerine; antivirüs sezgileri için). Kurulum türüne göre MSI ya da NSIS dosyası seçilir; sürüm listesinden yalnızca `vX.Y.Z` etiketleri dikkate alınır. NSIS `currentUser` kurulumu sayesinde yönetici izni gerekmez. Web/PWA’da service worker yeni sürümü sorar (otomatik yenileme yok).
 - **Sonuçlar:** Bütünlük HTTPS + SHA256SUMS ile sağlanır; özgünlük için ileride Authenticode imzası veya minisign önerilir (bkz. ROADMAP).
 
 ## ADR-008 Yedek biçimi ve şifreleme
@@ -58,3 +58,27 @@ Biçim: Başlık · Tarih · Durum · Bağlam · Seçenekler · Karar · Sonuçl
 
 ## ADR-014 Yazı tipleri
 - **Karar:** Inter (arayüz), Literata (okuma), Atkinson Hyperlegible, OpenDyslexic — Fontsource (OFL) ile uygulamaya gömülü; Literata/Atkinson için yalnızca Latin + Latin Genişletilmiş alt kümeleri (Türkçe karakterler) paketlenir. Harici font CDN’i yok.
+
+## ADR-015 Yerel OCR
+- **Karar:** tesseract.js 7 (Apache-2.0), LSTM “best_int” Türkçe + İngilizce dil verileri uygulamayla birlikte (çevrimdışı; CDN yok). Worker ve wasm `public/ocr` altında, service worker ön önbelleğine alınmaz (yalnızca kullanılınca önbelleğe girer). OCR yalnızca kullanıcı başlatınca çalışır; sonuç “OCR metni” olarak işaretlenir ve güven oranı gösterilir.
+
+## ADR-016 NexAktar (telefondan aktarım)
+- **Bağlam:** Herhangi bir Android/iOS cihazdan, uygulama kurmadan dosya göndermek; antivirüs ve güvenlik duvarı açısından temiz kalmak.
+- **Seçenekler:** (a) bulut aktarımı, (b) yerel ağda kalıcı servis, (c) kullanıcı başlatınca açılan, süre sınırlı yerel HTTP sunucusu + QR.
+- **Karar:** (c). Rust `tiny_http`, rastgele port, yalnızca LAN adresine bağlanma, 128 bit tek kullanımlık anahtar, dosya başına onay. Protokol açık ve belgeli (`docs/NEXAKTAR.md`).
+- **Sonuçlar:** Uygulamasız ve platformdan bağımsız. Bilinen sınır: yerel IP'de güvenli bağlam olmadığı için HTTP; risk kısa ömür ve onayla azaltılır.
+
+## ADR-017 Paylaşım paketleri ve kurumsal bilgi tabanı
+- **Karar:** `.nexpack` (ZIP + manifest + SHA-256). Kayıtlar paket içinde kalıcı `itemId` taşır; içe aktarmada yeni yerel kimlik verilir ve `pack` kökeni saklanır. Aynı `packId`'nin daha yeni sürümü güncelleme olarak uygulanır: içerik yenilenir, kişisel tekrar planı ve kullanıcı vurguları korunur (segment kimlikleri eşlenir), çıkarılan kayıtlar çöp kutusuna gider. Kişisel veri pakete hiç girmez.
+
+## ADR-018 Eşli öğrenme
+- **Karar:** Sunucu yok; `.nexduel` meydan okuma ve `.nexduel-cevap` dosyaları elden ele dolaşır. Cevaplar dosyada açıktır (güven oyunu); puan alıcıda cevaplardan yeniden hesaplanır. Tekrar planına dokunulmaz.
+
+## ADR-019 Android
+- **Karar:** Capacitor 8 (MIT); web derlemesi uygulama içine paketlenir, service worker kapalı. Yerel kod tek bir eklentide (`NexNativePlugin`): paylaş menüsü/“Birlikte aç”, doğrulamalı APK güncellemesi, Zihin dosyaları. Bulut yedeği ve cihaz aktarımı kapalı. İmza anahtarı CI gizli değişkenlerinden okunur.
+
+## ADR-020 Zihin (yerel yapay zekâ)
+- **Bağlam:** Yapay zekâ yardımı istenir ama Ollama gibi ayrı kurulum, büyük bağımlılık ve ağ bağımlılığı istenmez; Windows ve mobilde aynı çalışmalı.
+- **Seçenekler:** (a) Ollama/yerel sunucu, (b) bulut API, (c) WebView içinde WebAssembly ile çalışan küçük model.
+- **Karar:** (c) wllama 3.8 (llama.cpp, MIT). Çekirdekten bağımsız paket: masaüstü/Android'de çalışma zamanı ve model geliştiricinin kendi GitHub sürümünden (`zihin-v1`) manifestle indirilir ve SHA-256 ile doğrulanır; web'de elle model yükleme (OPFS). `ModelProvider` arayüzü motoru soyutlar. Çıktılar JSON şemasıyla istenir, doğrulanır, “otomatik” kökenle işaretlenir ve yalnızca kullanıcı onayıyla kaydedilir.
+- **Sonuçlar:** Gizlilik korunur (metin cihazdan çıkmaz). Küçük modellerin doğruluğu sınırlıdır; arayüz bunu açıkça söyler.
