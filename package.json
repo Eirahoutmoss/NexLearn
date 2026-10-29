@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "NexLearn — oku, anla, hatırla, uygula. Ücretsiz, yerel öncelikli öğrenme uygulaması.",
+  "author": "Hasan Güler",
   "license": "MPL-2.0",
   "type": "module",
   "scripts": {
@@ -49,5 +50,6 @@
     "pdfjs-dist": "^4.10.38",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
-  }
+  },
+  "homepage": "https://github.com/Eirahoutmoss/NexLearn"
 }

@@ -1,6 +1,6 @@
 # Ürün Şartnamesi (özet)
 
-Ana referans: [NEXLEARN_VISION.md](NEXLEARN_VISION.md). Bu belge, 0.1.0 sürümünde **gerçekten uygulanan** kapsamı ve bilinen sınırlamaları özetler.
+Bu belge, 0.1.0 sürümünde **gerçekten uygulanan** kapsamı ve bilinen sınırlamaları özetler.
 
 ## Ürün vaadi
 Kişisel bilgilerini içeri al. Oku, anla, bağlantılar kur, hatırla ve uygula. Öğrenme birikimin sana ait kalsın.

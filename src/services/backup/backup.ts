@@ -56,7 +56,7 @@ export interface ParsedBackup {
   warnings: { orphanSegments: number; orphanStates: number; orphanEvents: number };
 }
 
-/** Yedekteki dosya adları (NexLearn.md §12 önerilen paket biçimi). */
+/** Yedekteki dosya adları (önerilen paket biçimi). */
 const DATA_FILES: Record<RecordKind, string> = {
   sources: 'data/sources.json',
   segments: 'data/segments.json',
@@ -198,7 +198,7 @@ export async function createBackup(opts: { includeOriginals: boolean; password?:
   return { bytes, fileName: `nexlearn-backup-${stamp}.zip` };
 }
 
-/** Tek dosyalık JSON dışa aktarma (NexLearn.md §9 örnek şeması; segmentler kaynakların içinde). */
+/** Tek dosyalık JSON dışa aktarma (örnek şeması; segmentler kaynakların içinde). */
 export function toExportJson(data: BackupData): string {
   const segBySource = new Map<string, SourceSegment[]>();
   for (const s of data.segments) {

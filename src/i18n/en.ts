@@ -777,6 +777,11 @@ export const en: Dict = {
     web: 'Web / PWA',
     license: 'License',
     mission: 'NexLearn is free: no ads, no mandatory subscription, no usage walls and no mandatory account. The goal is not to keep you in the app but to strengthen your capacity to learn.',
+    developer: 'Developer',
+    family: 'Product family',
+    familyValue: 'Nex app family',
+    source: 'Source code',
+    rights: 'The “NexLearn” name and logo belong to the developer. Source code is licensed under MPL-2.0.',
     thirdParty: 'Third-party components',
   },
   help: {

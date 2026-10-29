@@ -53,8 +53,8 @@ Biçim: Başlık · Tarih · Durum · Bağlam · Seçenekler · Karar · Sonuçl
 ## ADR-012 Uluslararasılaştırma
 - **Karar:** Kendi sözlük katmanı; Türkçe kaynak, İngilizce tam çeviri; çoğul için `Intl.PluralRules`; eksik anahtarlar EN → TR’ye düşer ve geliştirme modunda bildirilir. Test, koddaki tüm anahtarların iki dilde de bulunduğunu doğrular.
 
-## ADR-013 Katkı onayı
-- **Karar:** DCO (`Signed-off-by:`); CLA gerekmez.
+## ADR-013 Katkı politikası
+- **Karar:** Proje tek geliştiricilidir (Hasan Güler); dış katkı kabul edilmez. Kaynak kod MPL-2.0 ile açık kalır, hata bildirimleri Issues üzerinden alınır.
 
 ## ADR-014 Yazı tipleri
 - **Karar:** Inter (arayüz), Literata (okuma), Atkinson Hyperlegible, OpenDyslexic — Fontsource (OFL) ile uygulamaya gömülü; Literata/Atkinson için yalnızca Latin + Latin Genişletilmiş alt kümeleri (Türkçe karakterler) paketlenir. Harici font CDN’i yok.

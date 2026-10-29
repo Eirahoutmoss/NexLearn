@@ -1,7 +1,7 @@
 import type { ReviewButton, ScheduleSnapshot } from './types';
 
 /**
- * SM-2 türevi deterministik tekrar algoritması (NexLearn.md Ek A).
+ * SM-2 türevi deterministik tekrar algoritması (bkz. docs/DATA_MODEL.md).
  * Saf fonksiyon: (durum, puan, şimdi, yapılandırma) => yeni durum. Yan etkisi yoktur, saat dilimi etkisi yoktur.
  */
 

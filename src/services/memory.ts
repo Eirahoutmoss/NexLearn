@@ -20,7 +20,7 @@ export const LONG_ANSWER_CHARS = 300;
 
 export type CardWarning = 'longAnswer' | 'duplicatePrompt' | 'noSource' | 'answerInPrompt';
 
-/** Kart kalite kontrolü (NexLearn.md §10). Hatalar engeller, uyarılar yalnızca bilgilendirir. */
+/** Kart kalite kontrolü (bkz. docs/DATA_MODEL.md). Hatalar engeller, uyarılar yalnızca bilgilendirir. */
 export function checkCardQuality(input: CardInput, existing: readonly LearningItem[] = []): CardWarning[] {
   const warnings: CardWarning[] = [];
   if (input.answer.trim().length > LONG_ANSWER_CHARS) warnings.push('longAnswer');

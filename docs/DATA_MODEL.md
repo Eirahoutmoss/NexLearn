@@ -45,7 +45,7 @@ Geri yükleme sırası: (şifre çözme) → güvenli yol denetimi ve boyut sın
 **Şifreli yedek** (`.nexlearn-enc`): `NXLENC01` | yineleme (u32 BE) | tuz (16) | IV (12) | AES-256-GCM şifreli ZIP. Anahtar PBKDF2-SHA256, 600.000 yineleme. Parola unutulursa kurtarma yoktur.
 
 ## Tek dosyalık JSON dışa aktarma
-`schemaVersion, exportedAt, appVersion, sources[] (segments iç içe), annotations, concepts, relations, learningItems, reviewStates, reviewEvents, applicationTasks, sessions, readingStates, settings` — NexLearn.md §9 örneğiyle uyumlu; geri yükleme de bu biçimi kabul eder.
+`schemaVersion, exportedAt, appVersion, sources[] (segments iç içe), annotations, concepts, relations, learningItems, reviewStates, reviewEvents, applicationTasks, sessions, readingStates, settings` — şartnamedeki örnekle uyumlu; geri yükleme de bu biçimi kabul eder.
 
 ## CSV
 - Kartlar: `id,type,prompt,answer,explanation,tags,suspended,repetitions,intervalDays,easeFactor,lapses,dueAt,lastReviewedAt,source,page,createdAt`
@@ -53,7 +53,7 @@ Geri yükleme sırası: (şifre çözme) → güvenli yol denetimi ve boyut sın
 UTF-8 BOM’lu; `= + - @` ile başlayan hücreler formül enjeksiyonuna karşı `'` ile korunur.
 
 ## Tekrar algoritması (`sm2-v1`)
-NexLearn.md Ek A’nın birebir uygulaması (`src/domain/scheduler.ts`). Düğme → puan: Tekrar=1, Zor=3, Normal=4, Kolay=5. Kolaylık 4 ondalığa yuvarlanır (kayan nokta gürültüsünü önlemek için), aralık en az 1 gün. Kuyruk: askıda olmayan, silinmemiş ve vadesi **yerel gün sonuna** kadar gelen kartlar.
+Ürün şartnamesindeki algoritmanın birebir uygulaması (`src/domain/scheduler.ts`). Düğme → puan: Tekrar=1, Zor=3, Normal=4, Kolay=5. Kolaylık 4 ondalığa yuvarlanır (kayan nokta gürültüsünü önlemek için), aralık en az 1 gün. Kuyruk: askıda olmayan, silinmemiş ve vadesi **yerel gün sonuna** kadar gelen kartlar.
 
 ## Metrik tanımları
 - Anlık doğruluk: önceki görüşmeden (ilk tekrarda kart oluşturulmasından) < 1 gün sonra yapılan tekrarlarda puan ≥ 3 oranı.

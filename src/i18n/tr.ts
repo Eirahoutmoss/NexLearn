@@ -793,6 +793,11 @@ export const tr: Dict = {
     web: 'Web / PWA',
     license: 'Lisans',
     mission: 'NexLearn ücretsizdir; reklam, zorunlu abonelik, kullanım duvarı ve zorunlu hesap yoktur. Amaç seni uygulamada tutmak değil, öğrenme kapasiteni güçlendirmek.',
+    developer: 'Geliştirici',
+    family: 'Ürün ailesi',
+    familyValue: 'Nex uygulama ailesi',
+    source: 'Kaynak kod',
+    rights: '“NexLearn” adı ve logosu geliştiriciye aittir. Kaynak kod MPL-2.0 lisanslıdır.',
     thirdParty: 'Üçüncü taraf bileşenler',
   },
   help: {

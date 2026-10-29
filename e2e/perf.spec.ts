@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { importFiles, makeTextPdf, openApp } from './helpers';
 
-// Performans bütçeleri (NexLearn.md §16). CI donanımı değişken olduğundan ölçümler raporlanır ve
+// Performans bütçeleri (bkz. docs/DATA_MODEL.md). CI donanımı değişken olduğundan ölçümler raporlanır ve
 // bütçe aşımı testi başarısız kılar.
 test('soğuk açılış < 2 sn (masaüstü bütçesi)', async ({ page }) => {
   const t0 = Date.now();

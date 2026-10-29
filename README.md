@@ -4,7 +4,7 @@
 
 NexLearn; kaynak okuma (NexRead), aktif hatırlama ve aralıklı tekrar (NexMemory) ile kavram haritası ve uygulama görevlerini (NexÖğren) tek bir yerel veri modelinde birleştirir. Her modül tek başına da kullanılabilir. Verilerin cihazında kalır; istediğin an açık biçimlerde dışa aktarabilir ve yedekleyebilirsin.
 
-> Ürün vizyonu ve şartname: [`docs/NEXLEARN_VISION.md`](docs/NEXLEARN_VISION.md) · Görsel konsept: [`docs/assets/concept-board.png`](docs/assets/concept-board.png)
+> Ürün kapsamı: [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md) · Görsel konsept: [`docs/assets/concept-board.png`](docs/assets/concept-board.png)
 
 ## Özellikler (MVP, 0.1.0)
 
@@ -51,7 +51,13 @@ cargo test --manifest-path src-tauri/Cargo.toml  # masaüstü güncelleme komutl
 | [SECURITY](docs/SECURITY.md) | Tehdit modeli ve gizlilik |
 | [RELEASING](docs/RELEASING.md) | Sürüm süreci |
 | [THIRD_PARTY](docs/THIRD_PARTY.md) | Üçüncü taraf lisansları |
-| [CONTRIBUTING](docs/CONTRIBUTING.md) · [CODE_OF_CONDUCT](docs/CODE_OF_CONDUCT.md) · [CHANGELOG](docs/CHANGELOG.md) | Katkı ve sürüm notları |
+| [DEVELOPMENT](docs/DEVELOPMENT.md) · [CHANGELOG](docs/CHANGELOG.md) | Geliştirme notları ve sürüm notları |
+
+## Geliştirici
+
+Hasan Güler · [github.com/Eirahoutmoss](https://github.com/Eirahoutmoss)
+
+Bu proje dış katkı (pull request) kabul etmez; hata ve öneriler için Issues kullanılabilir.
 
 ## Lisans
 

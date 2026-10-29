@@ -693,7 +693,19 @@ function About() {
           <dt>{t('about.license')}</dt>
           <dd>MPL-2.0</dd>
         </div>
+        <div>
+          <dt>{t('about.developer')}</dt>
+          <dd>Hasan Güler</dd>
+        </div>
+        <div>
+          <dt>{t('about.family')}</dt>
+          <dd>{t('about.familyValue')}</dd>
+        </div>
       </dl>
+      <p className="about-repo">
+        {t('about.source')}: <code>github.com/Eirahoutmoss/NexLearn</code>
+      </p>
+      <p className="field-hint">© {new Date().getFullYear()} Hasan Güler · {t('about.rights')}</p>
       <p>{t('about.mission')}</p>
       <div className="row-wrap">
         <Button variant="primary" icon={RefreshCw} loading={state === 'checking'} onClick={() => void check()} disabled={state === 'downloading'}>

@@ -1,5 +1,5 @@
 /**
- * Hata taksonomisi (NexLearn.md §8.6). Kullanıcı mesajları i18n'de `errors.<KOD>` altında durur.
+ * Hata taksonomisi (bkz. docs/DATA_MODEL.md). Kullanıcı mesajları i18n'de `errors.<KOD>` altında durur.
  * `details` alanına asla kaynak metni, dosya adı veya kişisel veri yazılmaz.
  */
 export const ERROR_CODES = [

@@ -10,3 +10,7 @@ src-tauri/target/
 src-tauri/gen/schemas/
 .vite/
 .scratch/
+
+# Yerel çalışma notları (depoya girmez)
+CLAUDE.md
+docs/NEXLEARN_VISION.md
