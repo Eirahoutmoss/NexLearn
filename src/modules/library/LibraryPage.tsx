@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Upload, StickyNote, Trash2, RotateCcw, Pencil, Tag, RefreshCw, Library as LibraryIcon, Search, Undo2, AlertTriangle } from 'lucide-react';
+import { Upload, StickyNote, Trash2, RotateCcw, Pencil, Tag, RefreshCw, Library as LibraryIcon, Search, Undo2, AlertTriangle, Package } from 'lucide-react';
 import { useI18n } from '../../i18n';
 import { useQuery } from '../../app/useQuery';
 import { useApp } from '../../app/AppContext';
@@ -18,7 +18,7 @@ type SortKey = 'recent' | 'title' | 'progress';
 export default function LibraryPage() {
   const { t, formatDate, formatNumber } = useI18n();
   const { toast, reportError, confirm } = useApp();
-  const { openImport } = useDialogs();
+  const { openImport, openPackExport } = useDialogs();
   const [tab, setTab] = useState<'all' | 'trash'>('all');
   const [q, setQ] = useState('');
   const [type, setType] = useState('all');
@@ -81,6 +81,9 @@ export default function LibraryPage() {
           <p className="page-sub">{t('library.subtitle')}</p>
         </div>
         <div className="row-wrap">
+          <Button variant="ghost" icon={Package} onClick={() => openPackExport()}>
+            {t('pack.share')}
+          </Button>
           <Button icon={StickyNote} onClick={() => openImport('note')}>
             {t('library.newNote')}
           </Button>
@@ -159,6 +162,11 @@ export default function LibraryPage() {
                       {s.pageCount ? ` · ${t('common.pagesN', { n: formatNumber(s.pageCount) })}` : ''}
                       {s.sourceType !== 'image' && s.wordCount > 0 ? ` · ${t('library.words', { n: formatNumber(s.wordCount) })} · ${t('library.minutes', { n: estimateReadingMinutes(s.wordCount) })}` : ''}
                     </p>
+                    {s.pack && (
+                      <p className="source-card-pack">
+                        <Package size={14} aria-hidden="true" /> {t('pack.fromPack', { title: String(s.metadata.packTitle ?? ''), n: s.pack.version })}
+                      </p>
+                    )}
                     {s.tags.length > 0 && (
                       <p className="source-card-tags">
                         {s.tags.map((x) => (

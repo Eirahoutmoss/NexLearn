@@ -5,7 +5,9 @@ export function downloadBlob(blob: Blob, fileName: string): void {
   a.href = url;
   a.download = fileName;
   a.rel = 'noopener';
-  document.body.appendChild(a);
+  // Açık bir modal varken sayfanın geri kalanı "inert" olur; bağlantı en üstteki pencereye eklenir.
+  const host = Array.from(document.querySelectorAll('dialog[open]')).pop() ?? document.body;
+  host.appendChild(a);
   a.click();
   a.remove();
   window.setTimeout(() => URL.revokeObjectURL(url), 10_000);

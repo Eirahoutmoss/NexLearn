@@ -2263,3 +2263,127 @@ h6.seg {
     aspect-ratio: 1 / 1;
   }
 }
+
+/* ---------- Paketler ve NexAktar ---------- */
+.source-card-pack {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--fs-xs);
+  color: var(--accent-text);
+  margin: 0;
+}
+.pack-title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s2);
+}
+.pack-counts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s2) var(--s4);
+}
+.choice-group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+}
+.choice {
+  display: flex;
+  gap: var(--s2);
+  align-items: flex-start;
+  padding: var(--s3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+.choice.selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.choice > span {
+  display: flex;
+  flex-direction: column;
+}
+.check-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 240px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+}
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  min-height: 44px;
+  padding: var(--s1) var(--s3);
+  cursor: pointer;
+}
+.check-row > span:nth-child(2) {
+  flex: 1;
+}
+.check-list li + li {
+  border-top: 1px solid var(--border);
+}
+.aktar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-top: var(--s3);
+  padding: var(--s3);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--r-md);
+}
+.aktar-live {
+  border-style: solid;
+}
+.aktar-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s4);
+  align-items: start;
+}
+.aktar-qr {
+  background: #fff;
+  padding: 8px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--border);
+}
+.aktar-steps {
+  margin: 0;
+  padding-left: 1.2em;
+}
+.aktar-url {
+  word-break: break-all;
+}
+.aktar-timer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.aktar-item {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+}
+.aktar-name {
+  flex: 1;
+  word-break: break-word;
+}
+@media (max-width: 640px) {
+  .aktar-grid {
+    grid-template-columns: 1fr;
+    justify-items: center;
+  }
+}

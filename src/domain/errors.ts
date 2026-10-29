@@ -25,6 +25,10 @@ export const ERROR_CODES = [
   'REL-003', // yinelenen ilişki
   'VAL-001', // zorunlu alan boş
   'UPD-001', // güncelleme doğrulanamadı
+  'AKT-001', // NexAktar başlatılamadı / komut başarısız
+  'AKT-002', // yerel ağ bağlantısı yok
+  'PCK-001', // paket dosyası geçersiz
+  'PCK-002', // paket daha yeni bir sürümden
   'UNK-000', // beklenmeyen hata
 ] as const;
 

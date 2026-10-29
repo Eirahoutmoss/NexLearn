@@ -23,7 +23,7 @@ test('yedek oluştur → tüm verileri sil → geri yükle → geri al', async (
   const jsonPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'JSON', exact: true }).click();
   const json = JSON.parse(readFileSync(await (await jsonPromise).path(), 'utf8'));
-  expect(json.schemaVersion).toBe('1.1.0');
+  expect(json.schemaVersion).toBe('1.2.0');
   expect(json.annotations.some((a: { noteText?: string }) => a.noteText === 'Yedek testi notu')).toBe(true);
 
   // Tüm verileri sil (yazarak onay)

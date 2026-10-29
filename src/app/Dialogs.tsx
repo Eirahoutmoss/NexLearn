@@ -11,6 +11,11 @@ import { addConceptSourceRef, createConcept, findConceptByLabel, listConcepts, u
 import type { Concept, LearningItem, LearningItemType, Source, SourceRef } from '../domain/types';
 import { isAppError } from '../domain/errors';
 import { useQuery } from './useQuery';
+import { AktarPanel } from '../modules/aktar/AktarPanel';
+import { aktarSupported } from '../services/aktar';
+import { PackExportModal, PackImportModal } from '../modules/pack/PackDialogs';
+import { looksLikePack } from '../services/pack';
+import { downloadBlob } from '../services/export/download';
 
 /* ------------------------------------------------------------------ */
 
@@ -37,6 +42,7 @@ interface DialogsApi {
   openImport: (tab?: 'file' | 'paste' | 'note') => void;
   openCardEditor: (init: CardEditorInit) => void;
   openConceptEditor: (init: ConceptEditorInit) => void;
+  openPackExport: (sourceIds?: string[]) => void;
 }
 
 const DialogsCtx = createContext<DialogsApi | null>(null);
@@ -51,11 +57,13 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
   const [importTab, setImportTab] = useState<null | 'file' | 'paste' | 'note'>(null);
   const [cardInit, setCardInit] = useState<CardEditorInit | null>(null);
   const [conceptInit, setConceptInit] = useState<ConceptEditorInit | null>(null);
+  const [packExport, setPackExport] = useState<string[] | null>(null);
   const api = useMemo<DialogsApi>(
     () => ({
       openImport: (tab = 'file') => setImportTab(tab),
       openCardEditor: (init) => setCardInit(init),
       openConceptEditor: (init) => setConceptInit(init),
+      openPackExport: (ids) => setPackExport(ids ?? []),
     }),
     [],
   );
@@ -65,6 +73,7 @@ export function DialogsProvider({ children }: { children: ReactNode }) {
       <ImportDialog tab={importTab} onClose={() => setImportTab(null)} onTab={setImportTab} />
       <CardEditor init={cardInit} onClose={() => setCardInit(null)} />
       <ConceptEditor init={conceptInit} onClose={() => setConceptInit(null)} />
+      <PackExportModal open={packExport != null} initialSourceIds={packExport ?? undefined} onClose={() => setPackExport(null)} />
     </DialogsCtx.Provider>
   );
 }
@@ -93,6 +102,8 @@ function ImportDialog({ tab, onClose, onTab }: { tab: null | 'file' | 'paste' | 
   const [text, setText] = useState('');
   const [textError, setTextError] = useState<string>();
   const inputRef = useRef<HTMLInputElement>(null);
+  const [packFile, setPackFile] = useState<File | null>(null);
+  const closePack = useCallback(() => setPackFile(null), []);
   const queue = useRef<Promise<void>>(Promise.resolve());
 
   useEffect(() => {
@@ -139,7 +150,15 @@ function ImportDialog({ tab, onClose, onTab }: { tab: null | 'file' | 'paste' | 
   );
 
   const addFiles = (files: FileList | File[]) => {
-    const list = Array.from(files);
+    const list: File[] = [];
+    for (const file of Array.from(files)) {
+      if (looksLikePack(file.name)) setPackFile(file);
+      else if (/\.(nexlearn-enc|zip)$/i.test(file.name) && /nexlearn-backup/i.test(file.name)) {
+        // Telefondan gelen yedek: diske kaydedilir, geri yükleme Ayarlar → Veri'den yapılır.
+        downloadBlob(file, file.name);
+        toast(t('aktar.backupReceived'), { tone: 'info' });
+      } else list.push(file);
+    }
     for (const file of list) {
       const job: ImportJob = { key: `${file.name}-${file.size}-${Math.random()}`, name: file.name, progress: 0, phase: 'queued', controller: new AbortController() };
       setJobs((js) => [...js, job]);
@@ -205,7 +224,7 @@ function ImportDialog({ tab, onClose, onTab }: { tab: null | 'file' | 'paste' | 
                 type="file"
                 multiple
                 hidden
-                accept=".pdf,.epub,.txt,.md,.markdown,.text,application/epub+zip,image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/markdown"
+                accept=".pdf,.epub,.nexpack,.txt,.md,.markdown,.text,application/epub+zip,image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/markdown"
                 onChange={(e) => {
                   if (e.target.files) addFiles(e.target.files);
                   e.target.value = '';
@@ -214,6 +233,7 @@ function ImportDialog({ tab, onClose, onTab }: { tab: null | 'file' | 'paste' | 
               />
             </div>
             <p className="import-note">{t('import.privacy')}</p>
+            {aktarSupported() && <AktarPanel onAccept={addFiles} />}
             {jobs.length > 0 && (
               <ul className="job-list" aria-label={t('import.jobs')}>
                 {jobs.map((j) => (
@@ -279,6 +299,7 @@ function ImportDialog({ tab, onClose, onTab }: { tab: null | 'file' | 'paste' | 
           </TabPanel>
         )}
       </Modal>
+      <PackImportModal file={packFile} onClose={closePack} />
       <Modal
         open={Boolean(pwRequest)}
         onClose={() => {

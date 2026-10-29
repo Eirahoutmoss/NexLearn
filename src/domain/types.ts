@@ -14,6 +14,16 @@ export interface BaseEntity {
   revision: number;
   /** Deneme modu (örnek içerik) kayıtlarını işaretler; toplu kaldırma için. */
   isSample?: boolean;
+  /** Paylaşılan bir paketten (.nexpack) geldiyse kaynağı; güncellemelerde eşleştirme için. */
+  pack?: PackOrigin;
+}
+
+export interface PackOrigin {
+  /** Paketin kalıcı kimliği. */
+  id: string;
+  /** Kaydın paket içindeki kalıcı kimliği. */
+  itemId: string;
+  version: number;
 }
 
 export type SourceType = 'pdf' | 'txt' | 'markdown' | 'note' | 'paste' | 'image' | 'epub';
@@ -65,6 +75,7 @@ export interface SourceSegment {
   confidence?: number;
   locator: Locator;
   isSample?: boolean;
+  pack?: PackOrigin;
 }
 
 export interface SourceRef {

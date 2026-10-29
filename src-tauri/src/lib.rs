@@ -6,7 +6,10 @@
 //! - Kurulum dosyasını SHA256SUMS içindeki özetle doğrular; uyuşmazsa dosyayı siler.
 //! - Kurucu yalnızca uygulamanın kendi yerel veri klasöründeki `updates` alt klasöründen çalıştırılır
 //!   (genel %TEMP% yerine; antivirüs sezgilerinin "geçiciden çalıştırma" işaretini önler).
-//! - Kalıcı arka plan hizmeti, otomatik başlatma, kanca ya da açık port yoktur.
+//! - Kalıcı arka plan hizmeti, otomatik başlatma ya da kanca yoktur. NexAktar'ın yerel sunucusu
+//!   yalnızca kullanıcı başlattığında ve en çok 10 dakika açık kalır (bkz. aktar.rs).
+
+mod aktar;
 
 use futures_util::StreamExt;
 use serde::Serialize;
@@ -184,7 +187,21 @@ fn install_update(app: AppHandle, path: String) -> Result<(), String> {
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![download_update, install_update, install_kind])
+        .manage(aktar::AktarState::default())
+        .invoke_handler(tauri::generate_handler![
+            download_update,
+            install_update,
+            install_kind,
+            aktar::aktar_start,
+            aktar::aktar_status,
+            aktar::aktar_extend,
+            aktar::aktar_stop,
+            aktar::aktar_pending,
+            aktar::aktar_take,
+            aktar::aktar_reject,
+            aktar::aktar_offer,
+            aktar::aktar_unoffer
+        ])
         .run(tauri::generate_context!())
         .expect("NexLearn başlatılamadı");
 }
