@@ -162,6 +162,10 @@ test('Zihin: isteğe bağlı; dosya doğrulanır, geçersiz model güvenle redde
   await section.getByTestId('zihin-file').setInputFiles([{ name: 'deneme.gguf', mimeType: 'application/octet-stream', buffer: fake }]);
   await expect(page.getByText('Dosya yüklendi.')).toBeVisible();
   await expect(section).toContainText('deneme.gguf');
+  // Masaüstü/Android'deki gibi çalışma zamanını elle seçme yolu (blob: adresinden yüklenir)
+  const wasm = readFileSync('node_modules/@wllama/wllama/esm/wasm/wllama.wasm');
+  await section.getByTestId('zihin-file').setInputFiles([{ name: 'wllama.wasm', mimeType: 'application/wasm', buffer: wasm }]);
+  await expect(page.getByText('Dosya yüklendi.').first()).toBeVisible();
   await section.getByRole('button', { name: 'Zihin’i başlat' }).click();
   await expect(page.getByText('Model çalıştırılamadı.', { exact: false })).toBeVisible({ timeout: 60_000 });
   await section.getByRole('button', { name: 'Zihin dosyalarını sil' }).click();

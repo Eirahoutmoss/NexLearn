@@ -1059,6 +1059,13 @@ export const tr: Dict = {
     noAnswer: 'Cevap yok',
   },
   zihin: {
+    needRuntimeTitle: 'Çalışma zamanı eksik.',
+    needRuntime: 'Model hazır, ama onu çalıştıracak motor dosyası (wllama.wasm) yok. Masaüstü ve Android sürümlerinde bu dosya uygulamayı küçük tutmak için ayrı gelir: “Zihin paketlerini listele” ile indir ya da wllama.wasm dosyasını seç.',
+    needModelTitle: 'Model eksik.',
+    needModel: 'Çalışma zamanı hazır; bir .gguf model dosyası seç ya da paket listesinden indir.',
+    pickRuntime: 'wllama.wasm dosyasını seç',
+    pickModel: '.gguf model dosyasını seç',
+    enableNeedsFiles: 'Önce çalışma zamanı (.wasm) ve model (.gguf) dosyalarının ikisi de hazır olmalı.',
     name: 'Zihin',
     local: 'cihazda',
     intro: 'Zihin, NexLearn’in isteğe bağlı yerel yapay zekâ eklentisidir: bölümden kart önerir, metni basitçe açıklar ve kendi anlatımını değerlendirir. Ek bir program (Ollama gibi) kurman gerekmez.',

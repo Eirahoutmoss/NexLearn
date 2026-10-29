@@ -165,6 +165,16 @@ export function ZihinSection() {
         )}
       </div>
       <p className="field-hint">{platform === 'web' ? t('zihin.webHint') : t('zihin.fileHint')}</p>
+      {local && !ready && (local.model || local.runtime) && (
+        <div className="inline-notice zihin-missing" role="status">
+          <p>
+            <strong>{local.model ? t('zihin.needRuntimeTitle') : t('zihin.needModelTitle')}</strong> {local.model ? t('zihin.needRuntime') : t('zihin.needModel')}
+          </p>
+          <Button size="sm" variant="primary" icon={FileUp} onClick={() => fileRef.current?.click()} disabled={Boolean(busy)}>
+            {local.model ? t('zihin.pickRuntime') : t('zihin.pickModel')}
+          </Button>
+        </div>
+      )}
 
       {manifest && (
         <ul className="mini-list zihin-models">
@@ -184,7 +194,7 @@ export function ZihinSection() {
         </ul>
       )}
 
-      <Switch label={t('zihin.enable')} hint={t('zihin.enableHint')} checked={settings.zihinEnabled} onChange={(v) => void updateSettings({ zihinEnabled: v })} disabled={!ready} />
+      <Switch label={t('zihin.enable')} hint={ready ? t('zihin.enableHint') : t('zihin.enableNeedsFiles')} checked={settings.zihinEnabled} onChange={(v) => void updateSettings({ zihinEnabled: v })} disabled={!ready} />
     </Card>
   );
 }

@@ -1043,6 +1043,13 @@ export const en: Dict = {
     noAnswer: 'No answer',
   },
   zihin: {
+    needRuntimeTitle: 'Runtime missing.',
+    needRuntime: 'The model is ready, but the engine file that runs it (wllama.wasm) is missing. On desktop and Android it comes separately to keep the app small: download it via “List Zihin packs” or pick the wllama.wasm file.',
+    needModelTitle: 'Model missing.',
+    needModel: 'The runtime is ready; pick a .gguf model file or download one from the pack list.',
+    pickRuntime: 'Pick wllama.wasm',
+    pickModel: 'Pick a .gguf model',
+    enableNeedsFiles: 'Both the runtime (.wasm) and the model (.gguf) must be ready first.',
     name: 'Zihin',
     local: 'on device',
     intro: 'Zihin is NexLearn’s optional local AI add-on: it suggests cards from a section, explains text simply and reviews your own explanation. No extra program (like Ollama) is needed.',
