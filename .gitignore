@@ -15,3 +15,5 @@ src-tauri/gen/schemas/
 CLAUDE.md
 docs/NEXLEARN_VISION.md
 public/ocr/
+public/zihin/
+dist-zihin/

@@ -34,6 +34,7 @@ export const DEFAULT_SETTINGS: Readonly<Settings> = Object.freeze({
   dailyGoals: { enabled: false, reviewCards: 10, readingMinutes: 15, notes: 1, tasks: 1 },
   storeTypedAnswers: false,
   askConfidence: false,
+  zihinEnabled: false,
   interleave: true,
   language: 'tr',
   onboardingDone: false,

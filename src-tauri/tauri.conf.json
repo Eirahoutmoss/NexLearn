@@ -23,26 +23,51 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost https://api.github.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+      "csp": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' data:; worker-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost asset: http://asset.localhost https://api.github.com; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'",
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "$APPLOCALDATA/zihin/*"
+        ]
+      }
     }
   },
   "bundle": {
     "active": true,
-    "targets": ["nsis", "msi"],
+    "targets": [
+      "nsis",
+      "msi"
+    ],
     "publisher": "Hasan Güler",
     "copyright": "© Hasan Güler — MPL-2.0",
     "category": "Education",
     "shortDescription": "Oku · Anla · Hatırla · Uygula",
     "longDescription": "NexLearn; kaynak okuma, not alma, aralıklı tekrar ve kavram haritasını tek, yerel öncelikli ve ücretsiz bir öğrenme döngüsünde birleştirir.",
-    "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
     "windows": {
-      "webviewInstallMode": { "type": "downloadBootstrapper" },
+      "webviewInstallMode": {
+        "type": "downloadBootstrapper"
+      },
       "nsis": {
         "installMode": "currentUser",
-        "languages": ["Turkish", "English"],
+        "languages": [
+          "Turkish",
+          "English"
+        ],
         "displayLanguageSelector": false
       },
-      "wix": { "language": ["tr-TR", "en-US"] }
+      "wix": {
+        "language": [
+          "tr-TR",
+          "en-US"
+        ]
+      }
     }
   }
 }

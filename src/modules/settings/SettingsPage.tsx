@@ -19,8 +19,9 @@ import { canSelfUpdate, checkForUpdate, checkWebUpdate, downloadAndInstall, isTa
 import { hasSample, loadSample, removeSample } from '../../sample/sample';
 import { eventToCombo } from '../../app/shortcuts';
 import { isAppError } from '../../domain/errors';
+import { ZihinSection } from './ZihinSection';
 
-const SECTIONS = ['appearance', 'reading', 'review', 'home', 'privacy', 'data', 'keyboard', 'language', 'about'] as const;
+const SECTIONS = ['appearance', 'reading', 'review', 'zihin', 'home', 'privacy', 'data', 'keyboard', 'language', 'about'] as const;
 
 export default function SettingsPage({ section }: { section?: string }) {
   const { t } = useI18n();
@@ -60,6 +61,7 @@ export default function SettingsPage({ section }: { section?: string }) {
           <Appearance />
           <Reading />
           <ReviewPrefs />
+          <ZihinSection />
           <HomePrefs />
           <Privacy />
           <DataSection />

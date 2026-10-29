@@ -38,7 +38,7 @@ function validate(input: CardInput): void {
 }
 
 /** Kart ve ilk tekrar durumunu tek işlemde oluşturur. Yeni kart hemen tekrar kuyruğuna girer. */
-export async function createCard(input: CardInput, opts: { isSample?: boolean; now?: Date } = {}): Promise<LearningItem> {
+export async function createCard(input: CardInput, opts: { isSample?: boolean; now?: Date; provenance?: LearningItem['provenance'] } = {}): Promise<LearningItem> {
   validate(input);
   const now = opts.now ?? new Date();
   const item = buildEntity(
@@ -52,7 +52,7 @@ export async function createCard(input: CardInput, opts: { isSample?: boolean; n
       conceptIds: input.conceptIds ?? [],
       tags: input.tags ?? [],
       suspended: false,
-      provenance: 'user',
+      provenance: opts.provenance ?? 'user',
       ...(opts.isSample ? { isSample: true } : {}),
     },
     now,

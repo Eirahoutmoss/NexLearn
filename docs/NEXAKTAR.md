@@ -31,7 +31,7 @@ Hata yanıtları: `413` (çok büyük), `429` (oturum başına 300 dosya sınır
 - **Kullanıcı başlatır, süre sınırlıdır.** Sunucu yalnızca düğmeyle açılır; arka plan hizmeti, otomatik başlatma ya da kalıcı port yoktur. Bu, antivirüs ve güvenlik duvarı sezgileri açısından da en temiz yoldur.
 - **Yalnızca yerel ağ.** Sunucu bilgisayarın yerel ağ adresine bağlanır (tüm arayüzlere değil). Özel ağ dışındaki (10/8, 172.16/12, 192.168/16, 169.254/16, IPv6 ULA ve link-local dışında) adreslerden gelen istekler reddedilir.
 - **Tek kullanımlık anahtar.** 128 bit rastgele; sabit sürede karşılaştırılır.
-- **Onaysız hiçbir şey kitaplığa girmez.** Dosyalar önce uygulamanın kendi klasöründe (`%LOCALAPPDATA%\NexLearn\aktar`) bekler.
+- **Onaysız hiçbir şey kitaplığa girmez.** Dosyalar önce uygulamanın kendi klasöründe (`%LOCALAPPDATA%\com.eirahoutmoss.nexlearn\aktar`) bekler.
 - **Dosya adları temizlenir.** Yol ayırıcıları, denetim karakterleri ve Windows'ta geçersiz karakterler atılır; uzunluk 120 karakterle sınırlanır. Dosya içeriği, uzantıya değil sihirli baytlara göre tanınır (içe aktarma kuralları).
 - **Telefon sayfası sıkı CSP ile sunulur:** `default-src 'none'`, yalnızca aynı kaynağa bağlantı, çerçeveye alınamaz, önbelleğe alınmaz.
 

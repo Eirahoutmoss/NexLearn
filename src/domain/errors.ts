@@ -29,6 +29,12 @@ export const ERROR_CODES = [
   'AKT-002', // yerel ağ bağlantısı yok
   'PCK-001', // paket dosyası geçersiz
   'PCK-002', // paket daha yeni bir sürümden
+  'ZHN-001', // Zihin paketi/manifesti geçersiz
+  'ZHN-002', // bu platformda indirme yok (web)
+  'ZHN-003', // Zihin dosyası indirilemedi/doğrulanamadı
+  'ZHN-004', // Zihin yüklü değil / dosyalar eksik
+  'ZHN-005', // model yüklenemedi ya da çalıştırılamadı
+  'ZHN-006', // model çıktısı kullanılamadı
   'UNK-000', // beklenmeyen hata
 ] as const;
 

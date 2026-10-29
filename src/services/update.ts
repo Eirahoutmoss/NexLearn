@@ -7,7 +7,7 @@ import { AppError } from '../domain/errors';
  */
 
 export const REPO = 'Eirahoutmoss/NexLearn';
-export const RELEASES_API = `https://api.github.com/repos/${REPO}/releases/latest`;
+export const RELEASES_API = `https://api.github.com/repos/${REPO}/releases?per_page=30`;
 export const RELEASES_PAGE = `https://github.com/${REPO}/releases`;
 export const DOWNLOAD_PREFIX = `https://github.com/${REPO}/releases/download/`;
 
@@ -85,6 +85,22 @@ export function parseRelease(raw: unknown): ReleaseInfo {
   };
 }
 
+/**
+ * Sürüm listesinden en yüksek uygulama sürümünü seçer. Taslaklar, ön sürümler ve uygulama dışı etiketler
+ * (ör. Zihin paketi için "zihin-v1") yok sayılır.
+ */
+export function pickLatest(list: unknown): ReleaseInfo {
+  if (!Array.isArray(list)) throw new AppError('UPD-001', 'shape');
+  let best: ReleaseInfo | null = null;
+  for (const raw of list as GithubRelease[]) {
+    if (!raw || raw.draft === true || raw.prerelease === true || typeof raw.tag_name !== 'string' || !/^v?\d+\.\d+\.\d+$/.test(raw.tag_name)) continue;
+    const info = parseRelease(raw);
+    if (!best || compareVersions(info.version, best.version) > 0) best = info;
+  }
+  if (!best) throw new AppError('UPD-001', 'no-release');
+  return best;
+}
+
 export async function fetchLatestRelease(signal?: AbortSignal): Promise<ReleaseInfo> {
   let res: Response;
   try {
@@ -94,7 +110,7 @@ export async function fetchLatestRelease(signal?: AbortSignal): Promise<ReleaseI
   }
   if (res.status === 404) throw new AppError('UPD-001', 'no-release');
   if (!res.ok) throw new AppError('NET-001', `http-${res.status}`);
-  return parseRelease(await res.json());
+  return pickLatest(await res.json());
 }
 
 export type UpdateCheck =

@@ -2429,3 +2429,37 @@ h6.seg {
 .table-wrap {
   overflow-x: auto;
 }
+
+/* ---------- Zihin ---------- */
+.zihin-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  margin-top: var(--s3);
+  padding: var(--s3);
+  border-radius: var(--r-md);
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--surface));
+}
+.zihin-head {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  font-weight: 650;
+  margin: 0;
+}
+.zihin-simple,
+.zihin-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s2);
+  padding: var(--s2) var(--s3);
+  border-left: 3px solid var(--accent);
+  background: var(--surface);
+  border-radius: var(--r-sm);
+}
+.zihin-review ul,
+.zihin-facts {
+  margin: 0;
+  padding-left: 1.2em;
+}

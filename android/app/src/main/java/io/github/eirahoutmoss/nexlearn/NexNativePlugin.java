@@ -208,6 +208,130 @@ public class NexNativePlugin extends Plugin {
         return null;
     }
 
+    /* ---------- Zihin paketi (isteğe bağlı yerel yapay zekâ) ---------- */
+
+    private static final long MAX_ZIHIN_BYTES = 3L * 1024 * 1024 * 1024;
+
+    static boolean validZihinName(String n) {
+        if (n == null || n.length() > 160 || !n.matches("[A-Za-z0-9._-]+") || n.contains("..")) return false;
+        String l = n.toLowerCase(Locale.ROOT);
+        return l.endsWith(".gguf") || l.endsWith(".wasm");
+    }
+
+    private File zihinDir() {
+        File d = new File(getContext().getFilesDir(), "zihin");
+        //noinspection ResultOfMethodCallIgnored
+        d.mkdirs();
+        return d;
+    }
+
+    @PluginMethod
+    public void zihinFetchText(PluginCall call) {
+        String url = call.getString("url", "");
+        if (!url.startsWith(DOWNLOAD_PREFIX) || !url.endsWith(".json")) {
+            call.reject("invalid-url");
+            return;
+        }
+        new Thread(() -> {
+            try {
+                HttpURLConnection c = open(url);
+                java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                try (InputStream in = c.getInputStream()) {
+                    byte[] b = new byte[8192];
+                    int r;
+                    while ((r = in.read(b)) > 0) {
+                        bos.write(b, 0, r);
+                        if (bos.size() > 256 * 1024) throw new Exception("too-large");
+                    }
+                }
+                JSObject ret = new JSObject();
+                ret.put("text", bos.toString("UTF-8"));
+                call.resolve(ret);
+            } catch (Exception e) {
+                call.reject(e.getMessage() == null ? "download" : e.getMessage());
+            }
+        }).start();
+    }
+
+    @PluginMethod
+    public void zihinDownload(PluginCall call) {
+        String url = call.getString("url", "");
+        String name = call.getString("fileName", "");
+        String sha = call.getString("sha256", "").toLowerCase(Locale.ROOT);
+        Long size = call.getLong("size", 0L);
+        if (!url.startsWith(DOWNLOAD_PREFIX) || !url.endsWith("/" + name) || !validZihinName(name) || !sha.matches("[0-9a-f]{64}") || size == null || size <= 0 || size > MAX_ZIHIN_BYTES) {
+            call.reject("invalid-args");
+            return;
+        }
+        new Thread(() -> {
+            File part = new File(zihinDir(), name + ".part");
+            File out = new File(zihinDir(), name);
+            try {
+                HttpURLConnection c = open(url);
+                long len = c.getContentLengthLong();
+                if (len > 0 && len != size) throw new Exception("size-mismatch");
+                MessageDigest md = MessageDigest.getInstance("SHA-256");
+                long done = 0, last = 0;
+                try (InputStream in = c.getInputStream(); OutputStream os = new FileOutputStream(part)) {
+                    byte[] buf = new byte[256 * 1024];
+                    int r;
+                    while ((r = in.read(buf)) > 0) {
+                        done += r;
+                        if (done > size) throw new Exception("size-mismatch");
+                        md.update(buf, 0, r);
+                        os.write(buf, 0, r);
+                        if (done - last > 2 * 1024 * 1024 || done == size) {
+                            last = done;
+                            JSObject p = new JSObject();
+                            p.put("name", name);
+                            p.put("downloaded", done);
+                            p.put("total", size);
+                            notifyListeners("zihinProgress", p);
+                        }
+                    }
+                }
+                StringBuilder hex = new StringBuilder();
+                for (byte x : md.digest()) hex.append(String.format(Locale.ROOT, "%02x", x));
+                if (done != size || !hex.toString().equals(sha)) throw new Exception("checksum-mismatch");
+                //noinspection ResultOfMethodCallIgnored
+                out.delete();
+                if (!part.renameTo(out)) throw new Exception("rename");
+                call.resolve();
+            } catch (Exception e) {
+                //noinspection ResultOfMethodCallIgnored
+                part.delete();
+                call.reject(e.getMessage() == null ? "download" : e.getMessage());
+            }
+        }).start();
+    }
+
+    @PluginMethod
+    public void zihinFiles(PluginCall call) {
+        JSArray arr = new JSArray();
+        File[] files = zihinDir().listFiles();
+        if (files != null) {
+            for (File f : files) {
+                if (!validZihinName(f.getName())) continue;
+                JSObject o = new JSObject();
+                o.put("name", f.getName());
+                o.put("size", f.length());
+                o.put("path", f.getAbsolutePath());
+                arr.put(o);
+            }
+        }
+        JSObject ret = new JSObject();
+        ret.put("files", arr);
+        call.resolve(ret);
+    }
+
+    @PluginMethod
+    public void zihinRemove(PluginCall call) {
+        File[] files = zihinDir().listFiles();
+        if (files != null) for (File f : files) //noinspection ResultOfMethodCallIgnored
+            f.delete();
+        call.resolve();
+    }
+
     private static HttpURLConnection open(String url) throws Exception {
         HttpURLConnection c = (HttpURLConnection) new URL(url).openConnection();
         c.setInstanceFollowRedirects(true);

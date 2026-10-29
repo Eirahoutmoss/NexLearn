@@ -261,6 +261,8 @@ export interface Settings {
   storeTypedAnswers: boolean;
   /** Tekrarda cevaptan önce güven sorulsun mu (üstbiliş ölçümü). */
   askConfidence: boolean;
+  /** İsteğe bağlı yerel yapay zekâ (Zihin) önerileri okuma ekranında gösterilsin mi. */
+  zihinEnabled: boolean;
   /** Tekrar kuyruğunu konu/kavramlara göre karıştır. */
   interleave: boolean;
   language: Language;

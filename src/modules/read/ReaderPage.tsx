@@ -50,6 +50,7 @@ import type { Annotation, HighlightColor, Source, SourceSegment } from '../../do
 import { partsText, selectionToParts, splitPieces, wordsPerMinute } from './readerUtils';
 import { PageView } from './PageView';
 import { OcrAction } from './OcrAction';
+import { ZihinActions } from './ZihinActions';
 import { KeywordSuggestions } from './KeywordSuggestions';
 import { FeynmanResultView, keyTermsAround } from '../learn/FeynmanPanel';
 import { feynmanCheck, type FeynmanResult } from '../../domain/learning';
@@ -1074,7 +1075,7 @@ function AnnotationList({
 
 function ExplainBox({ segment, sectionLabel, existing }: { segment?: SourceSegment; sectionLabel?: string; existing: Annotation[] }) {
   const { t } = useI18n();
-  const { toast, reportError } = useApp();
+  const { toast, reportError, settings } = useApp();
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
   const [check, setCheck] = useState<FeynmanResult | null>(null);
@@ -1115,6 +1116,7 @@ function ExplainBox({ segment, sectionLabel, existing }: { segment?: SourceSegme
         </div>
       </div>
       {check && <FeynmanResultView result={check} />}
+      {settings.zihinEnabled && <ZihinActions segment={segment} explanation={text} />}
     </section>
   );
 }

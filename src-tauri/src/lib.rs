@@ -10,6 +10,7 @@
 //!   yalnızca kullanıcı başlattığında ve en çok 10 dakika açık kalır (bkz. aktar.rs).
 
 mod aktar;
+mod zihin;
 
 use futures_util::StreamExt;
 use serde::Serialize;
@@ -200,7 +201,11 @@ pub fn run() {
             aktar::aktar_take,
             aktar::aktar_reject,
             aktar::aktar_offer,
-            aktar::aktar_unoffer
+            aktar::aktar_unoffer,
+            zihin::zihin_fetch_manifest,
+            zihin::zihin_download,
+            zihin::zihin_files,
+            zihin::zihin_remove
         ])
         .run(tauri::generate_context!())
         .expect("NexLearn başlatılamadı");
