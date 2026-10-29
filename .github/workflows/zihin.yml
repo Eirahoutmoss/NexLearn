@@ -1,0 +1,55 @@
+name: Zihin paketi
+
+# Zihin (isteğe bağlı yerel yapay zekâ) paketini "zihin-v1" ön sürümü olarak yayımlar.
+# Model Hugging Face'teki açık lisanslı kaynaktan indirilir, beklenen SHA-256 ile doğrulanır,
+# manifest üretilir ve sürüme eklenir. Uygulama sürümlerinden bağımsızdır (güncelleme denetimi bu etiketi yok sayar).
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/zihin.yml
+      - scripts/make-zihin-manifest.mjs
+
+permissions:
+  contents: write
+
+env:
+  MODEL_URL: https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_K_M.gguf
+  MODEL_FILE: Qwen3-0.6B-Q4_K_M.gguf
+  MODEL_SHA256: ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Modeli indir ve doğrula
+        run: |
+          curl -fL --retry 3 -o "$RUNNER_TEMP/$MODEL_FILE" "$MODEL_URL"
+          echo "$MODEL_SHA256  $RUNNER_TEMP/$MODEL_FILE" | sha256sum -c -
+      - name: Manifest
+        run: |
+          node scripts/make-zihin-manifest.mjs "$RUNNER_TEMP/$MODEL_FILE" --id qwen3-0-6b --label "Qwen3 0.6B (önerilen)" --license Apache-2.0 --langs tr,en --ctx 4096
+          cp "$RUNNER_TEMP/$MODEL_FILE" dist-zihin/
+          ls -la dist-zihin
+      - name: Ön sürüm (zihin-v1)
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: zihin-v1
+          target_commitish: ${{ github.sha }}
+          name: Zihin paketi v1
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          body: |
+            NexLearn **Zihin** — isteğe bağlı, tamamen cihazda çalışan yerel yapay zekâ paketi.
+            Uygulamada: Ayarlar → Zihin → **Zihin'i etkinleştir**. Dosyalar SHA-256 ile doğrulanır.
+            Model: Qwen3 0.6B Instruct, Q4_K_M (Apache-2.0).
+          files: dist-zihin/*
