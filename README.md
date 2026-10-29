@@ -4,7 +4,7 @@
 
 NexLearn; kaynak okuma (NexRead), aktif hatırlama ve aralıklı tekrar (NexMemory) ile kavram haritası ve uygulama görevlerini (NexÖğren) tek bir yerel veri modelinde birleştirir. Her modül tek başına da kullanılabilir. Verilerin cihazında kalır; istediğin an açık biçimlerde dışa aktarabilir ve yedekleyebilirsin.
 
-> Ürün kapsamı: [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md) · Görsel konsept: [`docs/assets/concept-board.png`](docs/assets/concept-board.png)
+> Ürün kapsamı: [`docs/PRODUCT_SPEC.md`](docs/PRODUCT_SPEC.md)
 
 ## Özellikler (0.2.0)
 
