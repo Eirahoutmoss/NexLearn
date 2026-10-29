@@ -132,6 +132,21 @@ pub fn zihin_files<R: Runtime>(app: AppHandle<R>) -> Vec<ZihinFile> {
     out
 }
 
+/// İndirilen dosyanın bir parçasını okur (en çok 32 MB). Ön yüz modeli parça parça tarayıcının
+/// özel dosya alanına (OPFS) taşır; büyük dosyalar böylece belleğe bir kerede alınmaz.
+#[tauri::command]
+pub fn zihin_read<R: Runtime>(app: AppHandle<R>, name: String, offset: u64, len: u64) -> Result<tauri::ipc::Response, String> {
+    use std::io::{Read, Seek, SeekFrom};
+    if !valid_name(&name) || len == 0 || len > 32 * 1024 * 1024 {
+        return Err("invalid-args".into());
+    }
+    let mut f = std::fs::File::open(dir(&app).join(&name)).map_err(|_| "open")?;
+    f.seek(SeekFrom::Start(offset)).map_err(|_| "seek")?;
+    let mut buf = Vec::with_capacity(len as usize);
+    f.take(len).read_to_end(&mut buf).map_err(|_| "read")?;
+    Ok(tauri::ipc::Response::new(buf))
+}
+
 #[tauri::command]
 pub fn zihin_remove<R: Runtime>(app: AppHandle<R>) -> Result<(), String> {
     let d = dir(&app);

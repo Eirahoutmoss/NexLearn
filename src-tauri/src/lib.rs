@@ -205,6 +205,7 @@ pub fn run() {
             zihin::zihin_fetch_manifest,
             zihin::zihin_download,
             zihin::zihin_files,
+            zihin::zihin_read,
             zihin::zihin_remove
         ])
         .run(tauri::generate_context!())

@@ -32,7 +32,7 @@ const errorMessages: Record<string, { title: string; action: string }> = {
   'ZHN-002': { title: 'Packs cannot be downloaded in the web version.', action: 'Download the model file (.gguf) to your computer and pick it with “Load from file”.' },
   'ZHN-003': { title: 'The Zihin file could not be downloaded or verified.', action: 'Check your connection and try again. Unverified files are deleted automatically.' },
   'ZHN-004': { title: 'Zihin is not ready.', action: 'Download and start the pack in Settings → Zihin.' },
-  'ZHN-005': { title: 'The model could not run.', action: 'Your device may not have enough memory. Try a smaller model or close other apps.' },
+  'ZHN-005': { title: 'The model could not run.', action: 'Try again. If it persists, share the line under “Details” with the developer or choose another model.' },
   'ZHN-006': { title: 'Zihin could not produce a usable answer.', action: 'Try again or choose a shorter section.' },
   'UNK-000': { title: 'An unexpected error occurred.', action: 'Try again; your data is safe.' },
 };

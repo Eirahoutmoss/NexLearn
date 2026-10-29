@@ -65,6 +65,7 @@ export async function downloadFile(ref: ZihinFileRef, onProgress: (f: number) =>
     } finally {
       off();
     }
+    await moveDesktopModelToOpfs();
     return;
   }
   if (p === 'android') {
@@ -122,6 +123,40 @@ export async function importLocalFile(file: File): Promise<void> {
   }
 }
 
+/**
+ * Masaüstü: Rust'ın indirip doğruladığı modeli 32 MB'lık parçalarla tarayıcının özel dosya alanına (OPFS)
+ * taşır ve uygulama klasöründeki kopyayı siler. Model böylece diskte durur ve yüklenirken bir kerede
+ * belleğe okunmaz (büyük dosyaları asset protokolüyle tek seferde çekmek WebView2'de başarısız olabiliyor).
+ */
+export async function moveDesktopModelToOpfs(onProgress?: (f: number) => void): Promise<void> {
+  const { invoke } = await import('@tauri-apps/api/core');
+  const files = await invoke<{ name: string; size: number; path: string }[]>('zihin_files').catch(() => []);
+  const model = files.find((f) => f.name.toLowerCase().endsWith('.gguf'));
+  if (!model) return;
+  const dir = await opfsDir();
+  if (!dir) throw new AppError('ZHN-004', 'opfs');
+  for (const f of await opfsFiles()) if (f.name.toLowerCase().endsWith('.gguf')) await dir.removeEntry(f.name).catch(() => undefined);
+  const handle = await dir.getFileHandle(model.name, { create: true });
+  const w = await (handle as FileSystemFileHandle & { createWritable(): Promise<FileSystemWritableFileStream> }).createWritable();
+  const CHUNK = 32 * 1024 * 1024;
+  try {
+    for (let offset = 0; offset < model.size; offset += CHUNK) {
+      const len = Math.min(CHUNK, model.size - offset);
+      const buf = await invoke<ArrayBuffer>('zihin_read', { name: model.name, offset, len });
+      await w.write(new Uint8Array(buf));
+      onProgress?.((offset + len) / model.size);
+    }
+    await w.close();
+  } catch (e) {
+    await w.abort().catch(() => undefined);
+    await dir.removeEntry(model.name).catch(() => undefined);
+    throw new AppError('ZHN-003', `opfs-copy:${e instanceof Error ? e.name : String(e).slice(0, 30)}`);
+  }
+  const copied = await (await dir.getFileHandle(model.name)).getFile();
+  if (copied.size !== model.size) throw new AppError('ZHN-003', 'opfs-size');
+  await invoke('zihin_remove').catch(() => undefined);
+}
+
 /* ---------- Yerel durum ---------- */
 
 export async function localStatus(): Promise<ZihinLocal> {
@@ -133,12 +168,21 @@ export async function localStatus(): Promise<ZihinLocal> {
   let model: ZihinLocal['model'] = opfsModel ? { name: opfsModel.name, size: opfsModel.size, load: async () => opfsModel } : null;
 
   if (p === 'desktop') {
-    const [{ invoke, convertFileSrc }] = await Promise.all([import('@tauri-apps/api/core')]);
+    const { invoke } = await import('@tauri-apps/api/core');
     const files = await invoke<{ name: string; size: number; path: string }[]>('zihin_files').catch(() => []);
-    const w = files.find((f) => f.name.endsWith('.wasm'));
     const m = files.find((f) => f.name.endsWith('.gguf'));
-    if (w) runtimeUrl = convertFileSrc(w.path);
-    if (m) model = { name: m.name, size: m.size, load: async () => (await fetch(convertFileSrc(m.path))).blob() };
+    // Eski sürümlerin uygulama klasörüne indirdiği model ilk kullanımda OPFS'ye taşınır.
+    if (m && !model)
+      model = {
+        name: m.name,
+        size: m.size,
+        load: async () => {
+          await moveDesktopModelToOpfs();
+          const f = (await opfsFiles()).find((x) => x.name === m.name);
+          if (!f) throw new AppError('ZHN-004', 'opfs-missing');
+          return f;
+        },
+      };
   } else if (p === 'android') {
     const { zihinFiles, fileUrl } = await import('../services/native');
     const files = await zihinFiles().catch(() => []);

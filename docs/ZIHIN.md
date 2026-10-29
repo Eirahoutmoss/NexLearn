@@ -41,7 +41,7 @@ Model çıktısı asla doğrudan kaydedilmez. Kart önerilerinde, cevabı kaynak
 
 ### Dosyaların saklandığı yer
 
-- **Windows:** `%LOCALAPPDATA%\com.eirahoutmoss.nexlearn\zihin\` (yalnızca bu klasör, asset protokolüyle ön yüze açılır)
+- **Windows:** Rust indirip doğrular, ardından model 32 MB'lık parçalarla WebView'in özel dosya alanına (OPFS) taşınır ve uygulama klasöründeki kopya silinir
 - **Android:** uygulamanın özel dosya alanı (`files/zihin`)
 - **Web:** tarayıcının özel dosya sistemi (OPFS)
 

@@ -22,7 +22,7 @@
 | CSV formül enjeksiyonu | `= + - @` ile başlayan hücreler `'` ile öneklenir. |
 | Güncelleme dosyasının değiştirilmesi | Yalnız depo adresleri; HTTPS; `SHA256SUMS.txt` ile özet doğrulaması; uyuşmazlıkta dosya silinir. (Önerilen gelecek adım: kod imzalama.) |
 | Harici bağlantıların otomatik açılması | İçe aktarılan içerikteki bağlantılar tıklanabilir hâle getirilmez. |
-| Masaüstü IPC kötüye kullanımı | Tauri yetenekleri yalnızca `core:default`; özel komutlar (güncelleme, NexAktar, Zihin) girdileri doğrular; asset protokolü yalnızca Zihin klasörüyle sınırlı. |
+| Masaüstü IPC kötüye kullanımı | Tauri yetenekleri yalnızca `core:default`; özel komutlar (güncelleme, NexAktar, Zihin) girdileri doğrular; asset protokolü kapalı (Zihin dosyaları parça parça okunur). |
 | NexAktar: yetkisiz yükleme | Tek kullanımlık 128 bit anahtar (sabit süreli karşılaştırma), yalnızca özel ağ adresleri, 20 hatalı denemede kapanma, 10 dakika süre, dosya başına onay, ad temizleme, boyut ve adet sınırları, sıkı CSP'li telefon sayfası. Bilinen sınır: yerel ağda HTTP (bkz. NEXAKTAR.md). |
 | Paylaşım paketi / meydan okuma dosyası kurcalama | `.nexpack`: içerik ve dosya SHA-256 özetleri, güvenli yol beyaz listesi, yapısal doğrulama, kayıt sınırı; kişisel veri pakete girmez. `.nexduel`: yapı ve uzunluk doğrulaması, puan dosyadan değil cevaplardan yeniden hesaplanır. |
 | Zihin model dosyası | Yalnızca bu deponun sürüm adresleri; manifestteki boyut ve SHA-256 ile doğrulama; model WebAssembly kum havuzunda çalışır; çıktılar hiçbir zaman HTML olarak işlenmez ve kullanıcı onayı olmadan kaydedilmez. |

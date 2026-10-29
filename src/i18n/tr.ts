@@ -34,7 +34,7 @@ const errorMessages: Record<string, { title: string; action: string }> = {
   'ZHN-002': { title: 'Web sürümünde paket indirilemiyor.', action: 'Model dosyasını (.gguf) bilgisayarına indirip “Dosyadan yükle” ile seç.' },
   'ZHN-003': { title: 'Zihin dosyası indirilemedi ya da doğrulanamadı.', action: 'Bağlantını denetleyip yeniden dene. Doğrulanamayan dosya otomatik silinir.' },
   'ZHN-004': { title: 'Zihin hazır değil.', action: 'Ayarlar → Zihin bölümünden paketi indir ve başlat.' },
-  'ZHN-005': { title: 'Model çalıştırılamadı.', action: 'Cihazında yeterli bellek olmayabilir. Daha küçük bir model dene ya da diğer uygulamaları kapat.' },
+  'ZHN-005': { title: 'Model çalıştırılamadı.', action: 'Yeniden dene. Sorun sürerse “Ayrıntılar”daki satırı geliştiriciye ilet ya da başka bir model seç.' },
   'ZHN-006': { title: 'Zihin kullanılabilir bir yanıt üretemedi.', action: 'Yeniden dene ya da daha kısa bir bölüm seç.' },
   'UNK-000': { title: 'Beklenmeyen bir hata oluştu.', action: 'İşlemi yeniden dene; verilerin güvende.' },
 };
