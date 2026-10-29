@@ -21,7 +21,13 @@ export interface ZihinModel extends ZihinFileRef {
   license: string;
   contextLength: number;
   languages: string[];
+  /** Hafif / dengeli / güçlü — arayüzdeki açıklama ve cihaza göre öneri bu kademeye göre yapılır. */
+  tier: ZihinTier;
+  /** Rahat çalışması için önerilen en az bellek (GB). */
+  minRamGB: number;
 }
+
+export type ZihinTier = 'light' | 'balanced' | 'strong';
 
 export interface ZihinManifest {
   format: 'nexlearn-zihin';
@@ -56,7 +62,7 @@ export function parseManifest(text: string): ZihinManifest {
   const runtime = { ...fileRef(rt, /\.wasm$/i, 'runtime'), engine: 'wllama' as const, version: typeof rt?.version === 'string' ? rt.version.slice(0, 32) : '' };
   if (rt?.engine !== 'wllama') throw new AppError('ZHN-001', 'engine');
   if (!Array.isArray(raw.models) || raw.models.length === 0 || raw.models.length > 10) throw new AppError('ZHN-001', 'models');
-  const models = (raw.models as Record<string, unknown>[]).map((m, i) => {
+  const models = (raw.models as Record<string, unknown>[]).map((m, i): ZihinModel => {
     const ref = fileRef(m, /\.gguf$/i, `models[${i}]`);
     const id = typeof m.id === 'string' && /^[a-z0-9-]{1,40}$/.test(m.id) ? m.id : null;
     if (!id) throw new AppError('ZHN-001', `models[${i}].id`);
@@ -67,6 +73,8 @@ export function parseManifest(text: string): ZihinManifest {
       license: typeof m.license === 'string' ? m.license.slice(0, 60) : '',
       contextLength: typeof m.contextLength === 'number' && m.contextLength >= 512 ? Math.min(m.contextLength, 32768) : 2048,
       languages: Array.isArray(m.languages) ? (m.languages as unknown[]).filter((x): x is string => typeof x === 'string').slice(0, 20) : [],
+      tier: (m.tier === 'light' || m.tier === 'balanced' || m.tier === 'strong' ? m.tier : ref.size < 700 * 1024 ** 2 ? 'light' : ref.size < 1500 * 1024 ** 2 ? 'balanced' : 'strong') as ZihinTier,
+      minRamGB: typeof m.minRamGB === 'number' && m.minRamGB > 0 && m.minRamGB <= 64 ? m.minRamGB : Math.ceil((ref.size * 2.2) / 1024 ** 3),
     };
   });
   return { format: 'nexlearn-zihin', formatVersion: 1, runtime, models };

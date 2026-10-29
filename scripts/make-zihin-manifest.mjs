@@ -60,6 +60,8 @@ for (const m of models) {
     license: m.license ?? '',
     languages: (m.langs ?? '').split(',').filter(Boolean),
     contextLength: Number(m.ctx ?? 4096),
+    ...(m.tier ? { tier: m.tier } : {}),
+    ...(m.ram ? { minRamGB: Number(m.ram) } : {}),
     name,
     url: BASE + name,
     size: statSync(m.path).size,

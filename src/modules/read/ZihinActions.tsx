@@ -9,7 +9,7 @@ import { getSegments } from '../../services/sources';
 import { createCard } from '../../services/memory';
 import { createSegmentAnnotation } from '../../services/annotations';
 import type { SourceSegment } from '../../domain/types';
-import { useZihinState, startZihin } from '../../zihin/state';
+import { useZihinState, startZihin, zihinError } from '../../zihin/state';
 import { wllamaProvider } from '../../zihin/engine';
 import { reviewExplanation, simplify, suggestCards, type CardSuggestion, type ExplanationReview } from '../../zihin/tasks';
 import { isAppError } from '../../domain/errors';
@@ -66,7 +66,7 @@ export function ZihinActions({ segment, explanation }: { segment: SourceSegment;
       }
       if (kind === 'review') setReview(await reviewExplanation(wllamaProvider, text, explanation, lang, signal));
     } catch (e) {
-      if (!(isAppError(e) && e.code === 'SRC-006')) reportError(e, `zihin-${kind}`);
+      if (!(isAppError(e) && e.code === 'SRC-006')) reportError(zihinError(e, `task-${kind}`), `zihin-${kind}`);
     } finally {
       setBusy(null);
     }

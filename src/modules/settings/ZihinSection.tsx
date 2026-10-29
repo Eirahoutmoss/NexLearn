@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Modal } from '../../components/Modal';
+import { deviceProfile, fitOf, recommend } from '../../zihin/recommend';
 import { Brain, Download, FileUp, Power, Trash2, RefreshCw } from 'lucide-react';
 import { Badge, Button, Card, ProgressBar, Switch } from '../../components/ui';
 import { useI18n } from '../../i18n';
@@ -24,6 +26,9 @@ export function ZihinSection() {
   const [manifest, setManifest] = useState<ZihinManifest | null>(null);
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [chooserOpen, setChooserOpen] = useState(false);
+  const [chosen, setChosen] = useState<string | null>(null);
+  const profile = useMemo(() => deviceProfile(), []);
 
   const refresh = useCallback(async () => {
     const s = await import('../../zihin/storage');
@@ -36,14 +41,36 @@ export function ZihinSection() {
     void refresh().catch(() => setModel(null));
   }, [refresh]);
 
-  const activate = async (m?: ZihinModel) => {
-    if (platform === 'web' && !model) {
+  /** Model seçim penceresini açar: liste bu düğmeye basılınca indirilir (kendiliğinden ağ isteği yok). */
+  const openChooser = async () => {
+    if (platform === 'web') {
       fileRef.current?.click();
       return;
     }
     setBusy(true);
     try {
-      if (model && !m) await startZihin();
+      const s = await import('../../zihin/storage');
+      const mf = manifest ?? (await s.fetchManifest());
+      setManifest(mf);
+      const rec = recommend(mf.models, profile);
+      setChosen(model && mf.models.some((x) => x.name === model.name) ? mf.models.find((x) => x.name === model.name)!.id : rec.id);
+      setChooserOpen(true);
+    } catch (e) {
+      reportError(e, 'zihin-manifest');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const activate = async (m?: ZihinModel) => {
+    if (!model && !m) {
+      await openChooser();
+      return;
+    }
+    setChooserOpen(false);
+    setBusy(true);
+    try {
+      if (model && (!m || m.name === model.name)) await startZihin();
       else await activateZihin(m);
       await updateSettings({ zihinEnabled: true });
       toast(t('zihin.activated'), { tone: 'success' });
@@ -74,15 +101,6 @@ export function ZihinSection() {
       reportError(e, 'zihin-file');
     } finally {
       setBusy(false);
-    }
-  };
-
-  const loadList = async () => {
-    try {
-      const s = await import('../../zihin/storage');
-      setManifest(await s.fetchManifest());
-    } catch (e) {
-      reportError(e, 'zihin-manifest');
     }
   };
 
@@ -150,8 +168,8 @@ export function ZihinSection() {
               </Button>
             )}
             {platform && platform !== 'web' && (
-              <Button size="sm" icon={RefreshCw} onClick={() => void loadList()} disabled={working}>
-                {t('zihin.listPacks')}
+              <Button size="sm" icon={RefreshCw} onClick={() => void openChooser()} disabled={working}>
+                {t('zihin.chooseModel')}
               </Button>
             )}
             <Button size="sm" icon={FileUp} onClick={() => fileRef.current?.click()} disabled={working}>
@@ -164,23 +182,61 @@ export function ZihinSection() {
             )}
           </div>
           <p className="field-hint">{t('zihin.fileHint')}</p>
-          {manifest && (
-            <ul className="mini-list zihin-models">
-              {manifest.models.map((m) => (
-                <li key={m.id} className="mini-item">
-                  <p className="mini-title">
-                    {m.label} <Badge>{mb(m.size)}</Badge>
-                  </p>
-                  <p className="mini-text">{t('zihin.modelMeta', { license: m.license || '—', langs: m.languages.join(', ') || '—' })}</p>
-                  <Button size="sm" variant="soft" icon={Download} onClick={() => void activate(m)} disabled={working || model?.name === m.name}>
-                    {model?.name === m.name ? t('zihin.present') : t('zihin.download', { size: mb(m.size) })}
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
         </div>
       </details>
+      <Modal
+        open={chooserOpen}
+        onClose={() => setChooserOpen(false)}
+        title={t('zihin.chooserTitle')}
+        description={t('zihin.chooserIntro')}
+        size="lg"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setChooserOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              icon={Download}
+              disabled={!chosen}
+              onClick={() => {
+                const m = manifest?.models.find((x) => x.id === chosen);
+                if (m) void activate(m);
+              }}
+            >
+              {manifest?.models.find((x) => x.id === chosen)?.name === model?.name ? t('zihin.start') : t('zihin.downloadAndStart')}
+            </Button>
+          </>
+        }
+      >
+        {manifest && (
+          <fieldset className="choice-group">
+            <legend className="sr-only">{t('zihin.chooserTitle')}</legend>
+            <p className="field-hint">{t('zihin.deviceLine', { mem: profile.memoryGB ? (profile.memoryGB >= 8 ? '8+' : String(profile.memoryGB)) : '?', gpu: profile.webgpu ? t('zihin.gpuYes') : t('zihin.gpuNo') })}</p>
+            {[...manifest.models]
+              .sort((a, b) => a.size - b.size)
+              .map((m) => {
+                const rec = recommend(manifest.models, profile).id === m.id;
+                const fit = fitOf(m, profile);
+                return (
+                  <label key={m.id} className={`choice zihin-choice ${chosen === m.id ? 'selected' : ''}`}>
+                    <input type="radio" name="zihin-model" checked={chosen === m.id} onChange={() => setChosen(m.id)} />
+                    <span>
+                      <span className="zihin-choice-head">
+                        <strong>{t(`zihin.tier.${m.tier}.title`)}</strong> · {m.label} <Badge>{mb(m.size)}</Badge>
+                        {rec && <Badge tone="success">{t('zihin.recommended')}</Badge>}
+                        {fit === 'heavy' && <Badge tone="warning">{t('zihin.heavy')}</Badge>}
+                        {model?.name === m.name && <Badge tone="accent">{t('zihin.installed')}</Badge>}
+                      </span>
+                      <span className="field-hint">{t(`zihin.tier.${m.tier}.why`)}</span>
+                      <span className="field-hint">{t('zihin.modelFacts', { ram: m.minRamGB, license: m.license || '—', langs: m.languages.join(', ') || '—' })}</span>
+                    </span>
+                  </label>
+                );
+              })}
+          </fieldset>
+        )}
+      </Modal>
       <input
         ref={fileRef}
         type="file"

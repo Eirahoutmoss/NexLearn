@@ -1,6 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { loadEngine, unloadEngine, isLoaded } from './engine';
 import { localStatus, type ZihinLocal } from './storage';
+import { AppError } from '../domain/errors';
 import type { ZihinModel } from './manifest';
 
 /** Zihin'in uygulama genelindeki durumu (motor tek örnek olduğu için modül düzeyinde). */
@@ -39,9 +40,15 @@ export function startZihin(local?: ZihinLocal): Promise<void> {
   starting = (async () => {
     set({ phase: 'loading', progress: 0, errorCode: null });
     try {
-      const l = local ?? (await localStatus());
-      await loadEngine(l, { onProgress: (p) => set({ progress: p }) });
-      set({ phase: 'ready', progress: 1, modelName: l.model?.name ?? null });
+      let stage = 'status';
+      try {
+        const l = local ?? (await localStatus());
+        stage = 'engine';
+        await loadEngine(l, { onProgress: (p) => set({ progress: p }) });
+        set({ phase: 'ready', progress: 1, modelName: l.model?.name ?? null });
+      } catch (e) {
+        throw zihinError(e, stage);
+      }
     } catch (e) {
       set({ phase: 'error', errorCode: (e as { code?: string }).code ?? 'ZHN-005' });
       throw e;
@@ -50,6 +57,14 @@ export function startZihin(local?: ZihinLocal): Promise<void> {
     }
   })();
   return starting;
+}
+
+/** Beklenmeyen hataları, nerede olduğunu söyleyen bir Zihin hatasına çevirir (içerik metni taşımaz). */
+export function zihinError(e: unknown, stage: string): AppError {
+  if (e instanceof AppError) return e;
+  const name = e instanceof Error ? e.name : typeof e;
+  const msg = e instanceof Error ? e.message.replace(/[A-Za-z]:\\[^\s]*|\/[^\s]*\/[^\s]*/g, '…').slice(0, 80) : '';
+  return new AppError('ZHN-005', `${stage}:${name}:${msg}`);
 }
 
 export async function stopZihin(): Promise<void> {
@@ -73,8 +88,9 @@ export async function activateZihin(model?: ZihinModel): Promise<void> {
       await s.downloadFile(target, (f) => set({ progress: f }));
     }
   } catch (e) {
-    set({ phase: 'error', errorCode: (e as { code?: string }).code ?? 'ZHN-003' });
-    throw e;
+    const err = zihinError(e, 'download');
+    set({ phase: 'error', errorCode: err.code });
+    throw err;
   }
   await startZihin();
 }

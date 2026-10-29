@@ -14,15 +14,10 @@ on:
 permissions:
   contents: write
 
-env:
-  MODEL_URL: https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/main/Qwen3-0.6B-Q4_K_M.gguf
-  MODEL_FILE: Qwen3-0.6B-Q4_K_M.gguf
-  MODEL_SHA256: ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a
-
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -30,15 +25,26 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - name: Modeli indir ve doğrula
+      - name: Modelleri indir ve manifest üret
         run: |
-          curl -fL --retry 3 -o "$RUNNER_TEMP/$MODEL_FILE" "$MODEL_URL"
-          echo "$MODEL_SHA256  $RUNNER_TEMP/$MODEL_FILE" | sha256sum -c -
-      - name: Manifest
-        run: |
-          node scripts/make-zihin-manifest.mjs "$RUNNER_TEMP/$MODEL_FILE" --id qwen3-0-6b --label "Qwen3 0.6B (önerilen)" --license Apache-2.0 --langs tr,en --ctx 4096
-          cp "$RUNNER_TEMP/$MODEL_FILE" dist-zihin/
+          set -e
+          HF=https://huggingface.co
+          dl() { curl -fL --retry 3 -o "$RUNNER_TEMP/$2" "$HF/$1/resolve/main/$2"; }
+          # Hafif — kullanıcının doğruladığı dosyayla aynı özet zorunlu
+          dl unsloth/Qwen3-0.6B-GGUF Qwen3-0.6B-Q4_K_M.gguf
+          echo "ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a  $RUNNER_TEMP/Qwen3-0.6B-Q4_K_M.gguf" | sha256sum -c -
+          ARGS=("$RUNNER_TEMP/Qwen3-0.6B-Q4_K_M.gguf" --id qwen3-0-6b --label "Qwen3 0.6B" --license Apache-2.0 --langs tr,en --ctx 4096 --tier light --ram 2)
+          # Dengeli ve güçlü — indirilebilirse eklenir (2 GB altı tek dosya)
+          if dl unsloth/Qwen3-1.7B-GGUF Qwen3-1.7B-Q4_K_M.gguf; then
+            ARGS+=("$RUNNER_TEMP/Qwen3-1.7B-Q4_K_M.gguf" --id qwen3-1-7b --label "Qwen3 1.7B" --license Apache-2.0 --langs tr,en --ctx 4096 --tier balanced --ram 4)
+          else echo "::warning::Qwen3 1.7B indirilemedi"; fi
+          if dl unsloth/Qwen3-4B-GGUF Qwen3-4B-Q3_K_S.gguf && [ "$(stat -c%s "$RUNNER_TEMP/Qwen3-4B-Q3_K_S.gguf")" -lt 2000000000 ]; then
+            ARGS+=("$RUNNER_TEMP/Qwen3-4B-Q3_K_S.gguf" --id qwen3-4b --label "Qwen3 4B" --license Apache-2.0 --langs tr,en --ctx 4096 --tier strong --ram 8)
+          else echo "::warning::Qwen3 4B eklenmedi (indirilemedi ya da 2 GB üstü)"; rm -f "$RUNNER_TEMP/Qwen3-4B-Q3_K_S.gguf"; fi
+          node scripts/make-zihin-manifest.mjs "${ARGS[@]}"
+          cp "$RUNNER_TEMP"/*.gguf dist-zihin/
           ls -la dist-zihin
+          cat dist-zihin/zihin-manifest.json
       - name: Ön sürüm (zihin-v1)
         uses: softprops/action-gh-release@v2
         with:
@@ -51,5 +57,5 @@ jobs:
           body: |
             NexLearn **Zihin** — isteğe bağlı, tamamen cihazda çalışan yerel yapay zekâ paketi.
             Uygulamada: Ayarlar → Zihin → **Zihin'i etkinleştir**. Dosyalar SHA-256 ile doğrulanır.
-            Model: Qwen3 0.6B Instruct, Q4_K_M (Apache-2.0).
+            Modeller (hepsi Apache-2.0): Qwen3 0.6B (hafif), Qwen3 1.7B (dengeli), Qwen3 4B (güçlü). Uygulama cihaza göre birini önerir.
           files: dist-zihin/*

@@ -6,6 +6,18 @@ Zihin, NexLearn'in **çekirdeğe bağımlı olmayan**, isteğe bağlı yapay zek
 
 Ayarlar → Zihin → **Zihin'i etkinleştir**. Önerilen model bir kez indirilir, SHA-256 ile doğrulanır, başlatılır ve okuma ekranındaki öneriler açılır. Başka hiçbir adım yoktur; sonraki açılışlarda Zihin, okuma ekranında bir Zihin düğmesine basıldığında kendiliğinden başlar. Web sürümünde tarayıcı GitHub'dan doğrudan indiremediği için aynı düğme bir .gguf dosyası seçtirir. Elle dosya seçme yalnızca **Gelişmiş** altındadır (internetsiz kullanım).
 
+## Modeller
+
+Paket listesi düğmeye basılınca indirilir; uygulama cihazın belleğine ve ekran kartı hızlandırmasına (WebGPU) bakarak birini önerir, her birinin neden seçilebileceğini açıklar:
+
+| Kademe | Model (Apache-2.0) | Boyut | Kime |
+|---|---|---|---|
+| Hafif | Qwen3 0.6B Q4_K_M | ~380 MB | Telefonlar, eski bilgisayarlar; hızlı ama sık yanılır |
+| Dengeli | Qwen3 1.7B Q4_K_M | ~1,1 GB | Çoğu bilgisayar; belirgin şekilde daha isabetli |
+| Güçlü | Qwen3 4B Q3_K_S | ~1,9 GB | Ekran kartı + 8 GB üstü bellek; en iyi kalite |
+
+Paket `.github/workflows/zihin.yml` iş akışıyla yayımlanır: modeller Hugging Face'ten indirilir, manifest üretilir ve `zihin-v1` ön sürümüne eklenir.
+
 ## Ne yapar?
 
 Okuma ekranında, “Kendi cümlelerinle anlat” kutusunun altında (Ayarlar → Zihin'den açılınca):
