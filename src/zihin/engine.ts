@@ -49,8 +49,19 @@ export async function loadEngine(local: ZihinLocal, opts: { contextLength?: numb
   opts.onProgress?.(0.1);
   const blob = await local.model.load();
   opts.onProgress?.(0.5);
+  // Ekran kartı (WebGPU) varsa hesaplama oraya verilir; yoksa ya da başarısız olursa işlemciyle devam edilir.
+  const base = { n_ctx: Math.min(opts.contextLength ?? 4096, 4096), n_threads: 1, reasoning: false };
   try {
-    await w.loadModel([blob], { n_ctx: Math.min(opts.contextLength ?? 4096, 4096), n_threads: 1, reasoning: false });
+    if (w.isSupportWebGPU()) {
+      try {
+        await w.loadModel([blob], { ...base, n_gpu_layers: 999 });
+      } catch {
+        await w.exit().catch(() => undefined);
+        return loadEngineCpu(local, blob, base, opts);
+      }
+    } else {
+      await w.loadModel([blob], base);
+    }
     // Bozuk ya da uyumsuz dosyalar bazen hatasız "yüklenir"; temel model bilgileri denetlenir.
     const meta = w.getModelMetadata();
     if (!meta?.hparams || !(meta.hparams.nVocab > 0) || !(meta.hparams.nLayer > 0)) throw new Error('invalid-model');
@@ -61,6 +72,23 @@ export async function loadEngine(local: ZihinLocal, opts: { contextLength?: numb
   opts.onProgress?.(1);
   instance = w;
   loadedName = local.model.name;
+}
+
+async function loadEngineCpu(local: ZihinLocal, blob: Blob, base: Record<string, unknown>, opts: { onProgress?: (f: number) => void }): Promise<void> {
+  const { Wllama } = await import('@wllama/wllama');
+  const w = new Wllama({ default: local.runtimeUrl! }, { suppressNativeLog: true, allowOffline: true });
+  w.setCompat(null);
+  try {
+    await w.loadModel([blob], { ...base, n_gpu_layers: 0 });
+    const meta = w.getModelMetadata();
+    if (!meta?.hparams || !(meta.hparams.nVocab > 0) || !(meta.hparams.nLayer > 0)) throw new Error('invalid-model');
+  } catch (e) {
+    await w.exit().catch(() => undefined);
+    throw new AppError('ZHN-005', e instanceof Error ? e.message.slice(0, 60) : 'load');
+  }
+  opts.onProgress?.(1);
+  instance = w;
+  loadedName = local.model!.name;
 }
 
 export async function unloadEngine(): Promise<void> {

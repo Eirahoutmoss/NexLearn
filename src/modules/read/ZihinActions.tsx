@@ -56,6 +56,8 @@ export function ZihinActions({ segment, explanation }: { segment: SourceSegment;
     ctrl.current = new AbortController();
     const signal = ctrl.current.signal;
     try {
+      // Zihin gerektiğinde kendiliğinden başlar; kullanıcı ayrı bir "başlat" adımıyla uğraşmaz.
+      await startZihin();
       const text = await sectionText(segment);
       if (kind === 'cards') setCards(await suggestCards(wllamaProvider, text, lang, signal));
       if (kind === 'simple') {
@@ -81,30 +83,6 @@ export function ZihinActions({ segment, explanation }: { segment: SourceSegment;
     }
   };
 
-  if (z.phase !== 'ready') {
-    return (
-      <div className="zihin-box">
-        <p className="zihin-head">
-          <Brain size={16} aria-hidden="true" /> {t('zihin.name')}
-        </p>
-        {z.phase === 'loading' ? (
-          <p className="field-hint" role="status">
-            {t('zihin.loading', { pct: Math.round(z.progress * 100) })}
-          </p>
-        ) : (
-          <div className="row-wrap">
-            <Button size="sm" icon={Brain} onClick={() => void startZihin().catch((e) => reportError(e, 'zihin-start'))}>
-              {t('zihin.start')}
-            </Button>
-            <a className="link-inline" href={`#${routes.settings('zihin')}`}>
-              {t('zihin.settingsLink')}
-            </a>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
     <div className="zihin-box" aria-busy={busy != null}>
       <p className="zihin-head">
@@ -126,6 +104,18 @@ export function ZihinActions({ segment, explanation }: { segment: SourceSegment;
           </Button>
         )}
       </div>
+      {z.phase === 'loading' && (
+        <p className="field-hint" role="status">
+          {t('zihin.loading', { pct: Math.round(z.progress * 100) })}
+        </p>
+      )}
+      {z.phase === 'error' && (
+        <p className="field-hint">
+          <a className="link-inline" href={`#${routes.settings('zihin')}`}>
+            {t('zihin.settingsLink')}
+          </a>
+        </p>
+      )}
       <p className="field-hint">{t('zihin.disclaimer')}</p>
 
       {cards && (

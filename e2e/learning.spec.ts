@@ -149,25 +149,23 @@ test('eşli öğrenme: meydan okuma dosyası → çöz → cevap dosyası → ka
   await expect(page.getByRole('table', { name: 'Ağ düellosu karşılaştırması' })).toContainText('Mehmet · %100');
 });
 
-test('Zihin: isteğe bağlı; dosya doğrulanır, geçersiz model güvenle reddedilir', async ({ page }) => {
+test('Zihin: tek düğme; dosya doğrulanır, geçersiz model güvenle reddedilir', async ({ page }) => {
   await openApp(page, '/settings?section=zihin');
   const section = page.locator('section', { has: page.getByRole('heading', { name: 'Zihin (yerel yapay zekâ)' }) });
   await expect(section).toContainText('Tamamen bu cihazda çalışır');
-  await expect(section.getByRole('switch', { name: 'Okuma ekranında Zihin önerilerini göster' })).toBeDisabled();
+  // Kullanıcı yalnızca tek düğme görür; çalışma zamanı uygulamayla gelir
+  await expect(section.getByRole('button', { name: 'Zihin’i etkinleştir' })).toBeVisible();
+  await expect(section).not.toContainText('wllama');
 
+  await section.getByText('Gelişmiş').click();
   await section.getByTestId('zihin-file').setInputFiles([{ name: 'sahte.gguf', mimeType: 'application/octet-stream', buffer: Buffer.from('bu bir model değil') }]);
   await expect(page.getByText('Zihin paketi geçersiz.', { exact: false })).toBeVisible();
 
+  // Geçerli başlıklı ama bozuk model: otomatik başlatılır ve güvenle reddedilir (motor gerçekten yüklenir)
   const fake = Buffer.concat([Buffer.from('GGUF'), Buffer.alloc(2048, 1)]);
   await section.getByTestId('zihin-file').setInputFiles([{ name: 'deneme.gguf', mimeType: 'application/octet-stream', buffer: fake }]);
-  await expect(page.getByText('Dosya yüklendi.')).toBeVisible();
-  await expect(section).toContainText('deneme.gguf');
-  // Masaüstü/Android'deki gibi çalışma zamanını elle seçme yolu (blob: adresinden yüklenir)
-  const wasm = readFileSync('node_modules/@wllama/wllama/esm/wasm/wllama.wasm');
-  await section.getByTestId('zihin-file').setInputFiles([{ name: 'wllama.wasm', mimeType: 'application/wasm', buffer: wasm }]);
-  await expect(page.getByText('Dosya yüklendi.').first()).toBeVisible();
-  await section.getByRole('button', { name: 'Zihin’i başlat' }).click();
   await expect(page.getByText('Model çalıştırılamadı.', { exact: false })).toBeVisible({ timeout: 60_000 });
+  await expect(section).toContainText('deneme.gguf');
   await section.getByRole('button', { name: 'Zihin dosyalarını sil' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Sil' }).click();
   await expect(section).not.toContainText('deneme.gguf');

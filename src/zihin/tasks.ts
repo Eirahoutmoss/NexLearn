@@ -43,10 +43,12 @@ export const CARD_SCHEMA = {
 };
 
 export function cardMessages(text: string, lang: Lang): ChatMessage[] {
+  // İçeriksiz bir biçim örneği: küçük modeller somut örnekleri kopyalamaya eğilimlidir.
+  const example = '{"cards":[{"question":"…?","answer":"…"}]}';
   const ask =
     lang === 'tr'
-      ? `Aşağıdaki metinden en önemli bilgileri yoklayan en fazla 4 soru-cevap kartı üret. Her soru tek bir bilgiyi sorsun; cevap kısa olsun ve metinden çıksın. Yalnızca JSON döndür.\n\nMETİN:\n${clip(text)}`
-      : `From the text below, create at most 4 question-answer flashcards that test the most important facts. Each question asks for one fact; answers are short and come from the text. Return JSON only.\n\nTEXT:\n${clip(text)}`;
+      ? `Aşağıdaki METİN'den en önemli bilgileri yoklayan 2-4 soru-cevap kartı üret. Kurallar: her soru soru işaretiyle biten tam bir soru cümlesidir ve tek bir bilgiyi sorar; cevap 1-8 kelimelik kısa bir ifadedir ve metinden çıkar; başlıkları soru yapma.\nBiçim: ${example}\n\nMETİN:\n${clip(text)}\n\nÇIKTI (yalnızca JSON):`
+      : `Create 2-4 question-answer flashcards that test the most important facts in the TEXT below. Rules: each question is a full sentence ending with a question mark and asks for one fact; the answer is a short 1-8 word phrase taken from the text; do not turn headings into questions.\nFormat: ${example}\n\nTEXT:\n${clip(text)}\n\nOUTPUT (JSON only):`;
   return [
     { role: 'system', content: SYSTEM[lang] },
     { role: 'user', content: ask },
@@ -64,12 +66,14 @@ export function parseCards(raw: string, sourceText: string): CardSuggestion[] {
   for (const c of list as Record<string, unknown>[]) {
     const q = typeof c?.question === 'string' ? c.question.trim().slice(0, 200) : '';
     const a = typeof c?.answer === 'string' ? c.answer.trim().slice(0, 300) : '';
-    if (q.length < 5 || !a) continue;
+    if (q.length < 8 || !a || !q.includes('?')) continue;
+    if (a.toLocaleLowerCase('tr') === q.toLocaleLowerCase('tr').replace(/\?$/, '').trim()) continue;
     const key = q.toLocaleLowerCase('tr');
     if (seen.has(key)) continue;
-    // Uydurmaya karşı basit güvence: cevabın en az bir anlamlı kelimesi kaynakta geçmeli.
-    const words = a.toLocaleLowerCase('tr').match(/[\p{L}\p{N}]{4,}/gu) ?? [];
-    if (words.length && !words.some((w) => source.includes(w.slice(0, Math.max(4, w.length - 3))))) continue;
+    // Uydurmaya karşı güvence: cevabın anlamlı kelimelerinin en az yarısı (kök olarak) kaynakta geçmeli.
+    const words = a.toLocaleLowerCase('tr').match(/[\p{L}\p{N}]{3,}/gu) ?? [];
+    const found = words.filter((w) => source.includes(w.slice(0, Math.max(3, Math.min(w.length, Math.ceil(w.length * 0.7)))))).length;
+    if (words.length && found / words.length < 0.5) continue;
     seen.add(key);
     out.push({ question: q, answer: a });
   }

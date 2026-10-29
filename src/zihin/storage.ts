@@ -6,8 +6,9 @@ import { ZIHIN_MANIFEST_URL, parseManifest, type ZihinFileRef, type ZihinManifes
  * Zihin dosyalarının (çalışma zamanı .wasm + model .gguf) platforma göre saklanması.
  * - Masaüstü: Rust indirir ve doğrular → uygulama klasörü → asset protokolüyle okunur.
  * - Android: Java indirir ve doğrular → uygulama klasörü → Capacitor dosya adresiyle okunur.
- * - Web: kullanıcının seçtiği dosyalar tarayıcının özel dosya alanında (OPFS) tutulur;
- *   çalışma zamanı web derlemesinde uygulamayla birlikte gelir.
+ * - Web: kullanıcının seçtiği model tarayıcının özel dosya alanında (OPFS) tutulur.
+ * Çalışma zamanı (wllama.wasm, ~3 MB sıkıştırılmış) tüm derlemelerde uygulamayla birlikte gelir
+ * ve yalnızca Zihin başlatılınca yüklenir; kullanıcı hiçbir zaman bu dosyayla uğraşmaz.
  */
 export interface ZihinLocal {
   runtimeUrl: string | null;
@@ -145,12 +146,9 @@ export async function localStatus(): Promise<ZihinLocal> {
     const m = files.find((f) => f.name.endsWith('.gguf'));
     if (w) runtimeUrl = fileUrl(w.path);
     if (m) model = { name: m.name, size: m.size, load: async () => (await fetch(fileUrl(m.path))).blob() };
-  } else if (!runtimeUrl) {
-    // Web derlemesinde çalışma zamanı uygulamayla birlikte sunulur (yalnızca etkinleştirilince indirilir).
-    runtimeUrl = await fetch(`${import.meta.env.BASE_URL}zihin/wllama.wasm`, { method: 'HEAD' })
-      .then((r) => (r.ok ? `${import.meta.env.BASE_URL}zihin/wllama.wasm` : null))
-      .catch(() => null);
   }
+  // Uygulamayla gelen çalışma zamanı (elle seçilmiş ya da indirilmiş bir sürüm yoksa).
+  if (!runtimeUrl) runtimeUrl = new URL(`${import.meta.env.BASE_URL}zihin/wllama.wasm`, document.baseURI).href;
   return { runtimeUrl, model };
 }
 

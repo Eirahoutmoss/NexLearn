@@ -2470,3 +2470,19 @@ h6.seg {
   justify-content: space-between;
   gap: var(--s2);
 }
+.zihin-status {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  padding: var(--s3);
+  border-radius: var(--r-md);
+  background: var(--success-soft);
+  color: var(--success);
+}
+.zihin-advanced summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
